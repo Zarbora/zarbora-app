@@ -1,14 +1,35 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Building, Car, Home, Search, Bike, Shirt, Plus, Edit } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ResourceCard } from "./resource-card"
-import { ResourceDetailsDialog } from "./resource-details-dialog"
-import { ResourceFormDialog } from "./resource-form-dialog"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import {
+  Building,
+  Car,
+  Home,
+  Search,
+  Bike,
+  Shirt,
+  Plus,
+  Edit,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ResourceCard } from "./resource-card";
+import { ResourceDetailsDialog } from "./resource-details-dialog";
+import { ResourceFormDialog } from "./resource-form-dialog";
+import { Button } from "@/components/ui/button";
 
 // Sample city zones data
 const cityZones = [
@@ -47,7 +68,7 @@ const cityZones = [
     description: "Spaces for health, fitness, and relaxation",
     taxRate: 7,
   },
-]
+];
 
 // Sample resource data
 const resources = [
@@ -75,7 +96,8 @@ const resources = [
     dailyTax: 5,
     currentOwner: "0x4d5...6e7f",
     ownerName: "Maya Chen",
-    description: "Standing desk with dual monitor setup in the main coworking space",
+    description:
+      "Standing desk with dual monitor setup in the main coworking space",
     location: "Innovation Zone",
     amenities: ["Ergonomic Chair", "Monitors", "High-speed Internet"],
     occupancyEnds: "2024-05-25",
@@ -136,48 +158,50 @@ const resources = [
     depreciationRate: 1,
     currentDepreciatedValue: 20,
   },
-]
+];
 
 export function ResourcesOverview() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedType, setSelectedType] = useState("all")
-  const [selectedStatus, setSelectedStatus] = useState("all")
-  const [selectedResource, setSelectedResource] = useState<any>(null)
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
-  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false)
-  const [resourceToEdit, setResourceToEdit] = useState<any>(null)
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedType, setSelectedType] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedResource, setSelectedResource] = useState<any>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
+  const [resourceToEdit, setResourceToEdit] = useState<any>(null);
 
   // Filter resources based on search term, type, and status
   const filteredResources = resources.filter((resource) => {
     const matchesSearch =
       resource.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       resource.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (resource.ownerName && resource.ownerName.toLowerCase().includes(searchTerm.toLowerCase()))
+      (resource.ownerName &&
+        resource.ownerName.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchesType = selectedType === "all" || resource.type === selectedType
+    const matchesType =
+      selectedType === "all" || resource.type === selectedType;
 
     const matchesStatus =
       selectedStatus === "all" ||
       (selectedStatus === "occupied" && resource.currentOwner) ||
-      (selectedStatus === "available" && !resource.currentOwner)
+      (selectedStatus === "available" && !resource.currentOwner);
 
-    return matchesSearch && matchesType && matchesStatus
-  })
+    return matchesSearch && matchesType && matchesStatus;
+  });
 
   const handleResourceClick = (resource: any) => {
-    setSelectedResource(resource)
-    setIsDetailsDialogOpen(true)
-  }
+    setSelectedResource(resource);
+    setIsDetailsDialogOpen(true);
+  };
 
   const handleAddResource = () => {
-    setResourceToEdit(null)
-    setIsFormDialogOpen(true)
-  }
+    setResourceToEdit(null);
+    setIsFormDialogOpen(true);
+  };
 
   const handleEditResource = (resource: any) => {
-    setResourceToEdit(resource)
-    setIsFormDialogOpen(true)
-  }
+    setResourceToEdit(resource);
+    setIsFormDialogOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -186,11 +210,14 @@ export function ResourcesOverview() {
           <div>
             <CardTitle>Public Resources</CardTitle>
             <CardDescription>
-              All resources are governed by Harberger taxes. Set your valuation, pay the tax, and use the resource until
-              someone buys it from you.
+              All resources are governed by Harberger taxes. Set your valuation,
+              pay the tax, and use the resource until someone buys it from you.
             </CardDescription>
           </div>
-          <Button onClick={handleAddResource} className="bg-stone-800 text-white hover:bg-stone-700">
+          <Button
+            onClick={handleAddResource}
+            className="bg-stone-800 text-white hover:bg-stone-700"
+          >
             <Plus className="mr-2 h-4 w-4" />
             Add Resource
           </Button>
@@ -203,7 +230,6 @@ export function ResourcesOverview() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full"
-                icon={<Search className="h-4 w-4" />}
               />
             </div>
             <div>
@@ -239,14 +265,18 @@ export function ResourcesOverview() {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {filteredResources.map((resource) => (
           <div key={resource.id} className="relative group">
-            <ResourceCard resource={resource} onClick={() => handleResourceClick(resource)} />
+            <ResourceCard
+              resource={resource}
+              onClick={() => handleResourceClick(resource)}
+            />
             <Button
               variant="outline"
               size="icon"
               className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white"
               onClick={(e) => {
-                e.stopPropagation()
-                handleEditResource(resource)
+                e.preventDefault();
+                e.stopPropagation();
+                handleEditResource(resource);
               }}
             >
               <Edit className="h-4 w-4" />
@@ -271,5 +301,5 @@ export function ResourcesOverview() {
         cityZones={cityZones}
       />
     </div>
-  )
+  );
 }
