@@ -1,26 +1,34 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { ThumbsUp } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useState } from "react";
+import { ThumbsUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface QuadraticVotingProps {
-  eventId: number
-  initialVotes: number
+  eventId: string;
+  initialVotes: number;
 }
 
-export function QuadraticVoting({ eventId, initialVotes }: QuadraticVotingProps) {
-  const [votes, setVotes] = useState(initialVotes)
-  const [userVotes, setUserVotes] = useState(0)
+export function QuadraticVoting({
+  eventId,
+  initialVotes,
+}: QuadraticVotingProps) {
+  const [votes, setVotes] = useState(initialVotes);
+  const [userVotes, setUserVotes] = useState(0);
 
   // Calculate the cost of the next vote using quadratic formula
-  const nextVoteCost = Math.pow(userVotes + 1, 2) - Math.pow(userVotes, 2)
+  const nextVoteCost = Math.pow(userVotes + 1, 2) - Math.pow(userVotes, 2);
 
   const handleVote = () => {
-    setVotes(votes + 1)
-    setUserVotes(userVotes + 1)
-  }
+    setVotes(votes + 1);
+    setUserVotes(userVotes + 1);
+  };
 
   return (
     <TooltipProvider>
@@ -45,5 +53,5 @@ export function QuadraticVoting({ eventId, initialVotes }: QuadraticVotingProps)
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
-  )
+  );
 }

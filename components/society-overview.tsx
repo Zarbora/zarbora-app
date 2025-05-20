@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -23,82 +23,66 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Building2, Users, Vote } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/auth-context";
-
-interface Society {
-  id: string;
-  name: string;
-  description: string;
-  memberCount: number;
-  resourceCount: number;
-  governanceWeight: number;
-  members: string[]; // Array of member addresses
-}
+import { api } from "@/lib/api";
+import type { Society } from "@/lib/api";
 
 export function SocietyOverview() {
   const router = useRouter();
   const { address } = useAuth();
-  const [societies, setSocieties] = useState<Society[]>([
-    {
-      id: "1",
-      name: "Zarbora Metropolis",
-      description: "A decentralized city simulation with Harberger taxes",
-      memberCount: 120,
-      resourceCount: 79,
-      governanceWeight: 500,
-      members: ["0x123...", "0x456..."], // Example member addresses
-    },
-  ]);
-
+  const [societies, setSocieties] = useState<Society[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [newSociety, setNewSociety] = useState({
     name: "",
     description: "",
   });
 
-  const handleCreateSociety = () => {
+  useEffect(() => {
+    async function loadSocieties() {
+      try {
+        const data = await api.societies.getAll();
+        setSocieties(data);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to load societies"
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadSocieties();
+  }, []);
+
+  const handleCreateSociety = async () => {
     if (!address) return;
 
-    const society: Society = {
-      id: Date.now().toString(),
-      name: newSociety.name,
-      description: newSociety.description,
-      memberCount: 1,
-      resourceCount: 0,
-      governanceWeight: 100,
-      members: [address], // Add creator as first member
-    };
-    setSocieties([...societies, society]);
-    setNewSociety({ name: "", description: "" });
-  };
-
-  const handleJoinSociety = (societyId: string) => {
-    if (!address) return;
-
-    setSocieties(
-      societies.map((society) => {
-        if (society.id === societyId) {
-          return {
-            ...society,
-            members: [...society.members, address],
-            memberCount: society.memberCount + 1,
-          };
-        }
-        return society;
-      })
-    );
-  };
-
-  const handleViewSociety = (societyId: string) => {
-    const society = societies.find((s) => s.id === societyId);
-    if (society && society.members.includes(address || "")) {
-      router.push(`/society/${societyId}`);
+    try {
+      const society = await api.societies.create({
+        name: newSociety.name,
+        description: newSociety.description || null,
+        governance_address: address,
+        treasury_address: null,
+      });
+      setSocieties([...societies, society]);
+      setNewSociety({ name: "", description: "" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create society");
     }
   };
 
-  const isMember = (society: Society) => {
-    return address && society.members.includes(address);
+  const handleViewSociety = (societyId: string) => {
+    router.push(`/society/${societyId}`);
   };
+
+  if (loading) {
+    return <div>Loading societies...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -169,7 +153,9 @@ export function SocietyOverview() {
           <Card key={society.id} className="overflow-hidden">
             <CardHeader className="pb-2">
               <CardTitle className="text-xl">{society.name}</CardTitle>
-              <CardDescription>{society.description}</CardDescription>
+              <CardDescription>
+                {society.description || "No description"}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-4">
@@ -179,7 +165,7 @@ export function SocietyOverview() {
                     Members
                   </div>
                   <div className="text-lg font-semibold text-stone-900 dark:text-white">
-                    {society.memberCount}
+                    {society.total_members}
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -188,37 +174,27 @@ export function SocietyOverview() {
                     Resources
                   </div>
                   <div className="text-lg font-semibold text-stone-900 dark:text-white">
-                    {society.resourceCount}
+                    {society.total_resources}
                   </div>
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center text-sm text-stone-600 dark:text-stone-400">
                     <Vote className="mr-1 h-4 w-4" />
-                    Governance
+                    Proposals
                   </div>
                   <div className="text-lg font-semibold text-stone-900 dark:text-white">
-                    {society.governanceWeight}
+                    {society.total_proposals}
                   </div>
                 </div>
               </div>
               <div className="mt-4 flex gap-2">
-                {isMember(society) ? (
-                  <Button
-                    onClick={() => handleViewSociety(society.id)}
-                    size="sm"
-                    className="flex-1 bg-stone-800 text-white hover:bg-stone-700"
-                  >
-                    Enter Society
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => handleJoinSociety(society.id)}
-                    size="sm"
-                    className="flex-1 bg-stone-800 text-white hover:bg-stone-700"
-                  >
-                    Join Society
-                  </Button>
-                )}
+                <Button
+                  onClick={() => handleViewSociety(society.id)}
+                  size="sm"
+                  className="flex-1 bg-stone-800 text-white hover:bg-stone-700"
+                >
+                  Enter Society
+                </Button>
               </div>
             </CardContent>
           </Card>

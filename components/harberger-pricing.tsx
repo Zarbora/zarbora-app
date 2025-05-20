@@ -1,25 +1,76 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { AlertCircle, HelpCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useState, useEffect } from "react";
+import { AlertCircle, HelpCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { api } from "@/lib/api";
 
-export function HarbergerPricing() {
-  const [valuation, setValuation] = useState(50)
-  const taxRate = 0.1 // 10% Harberger tax rate
-  const hourlyRent = valuation * taxRate
-  const dailyRent = hourlyRent * 24
-  const retentionDays = Math.floor(valuation / dailyRent)
+interface HarbergerPricingProps {
+  resourceId: string;
+}
+
+interface PricingData {
+  minPrice: number;
+  maxPrice: number;
+  taxRate: number;
+  retentionDays: number;
+}
+
+export function HarbergerPricing({ resourceId }: HarbergerPricingProps) {
+  const [valuation, setValuation] = useState(50);
+  const [pricingData, setPricingData] = useState<PricingData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadPricingData() {
+      try {
+        const data = await api.harbergerPricing.getByResource(resourceId);
+        setPricingData(data);
+        setValuation(data.minPrice);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to load pricing data"
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadPricingData();
+  }, [resourceId]);
+
+  if (loading) {
+    return <div>Loading pricing data...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
+  if (!pricingData) {
+    return null;
+  }
+
+  const dailyTax = (valuation * pricingData.taxRate) / 365;
+  const retentionDays = Math.floor(valuation / dailyTax);
 
   return (
     <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
       <div className="mb-4 flex items-start justify-between">
-        <h3 className="text-base font-medium text-stone-800">Harberger Slot Pricing</h3>
+        <h3 className="text-base font-medium text-stone-800">
+          Harberger Slot Pricing
+        </h3>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -30,9 +81,10 @@ export function HarbergerPricing() {
             </TooltipTrigger>
             <TooltipContent className="max-w-xs">
               <p>
-                Harberger taxes ensure efficient allocation of premium slots. You set your valuation and pay a
-                continuous tax based on it. Anyone can buy your slot at your stated price. Higher valuations mean higher
-                taxes but more security.
+                Harberger taxes ensure efficient allocation of premium slots.
+                You set your valuation and pay a continuous tax based on it.
+                Anyone can buy your slot at your stated price. Higher valuations
+                mean higher taxes but more security.
               </p>
             </TooltipContent>
           </Tooltip>
@@ -64,9 +116,9 @@ export function HarbergerPricing() {
           <div className="flex items-center space-x-2">
             <Slider
               id="valuation"
-              min={10}
-              max={500}
-              step={5}
+              min={pricingData.minPrice}
+              max={pricingData.maxPrice}
+              step={1}
               value={[valuation]}
               onValueChange={(value) => setValuation(value[0])}
             />
@@ -75,16 +127,15 @@ export function HarbergerPricing() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="hourly-rent" className="text-sm">
-              Hourly Rent
+            <Label htmlFor="daily-tax" className="text-sm">
+              Daily Tax Payment
             </Label>
-            <Input id="hourly-rent" value={`${hourlyRent.toFixed(2)} DAI`} readOnly className="mt-1" />
-          </div>
-          <div>
-            <Label htmlFor="daily-rent" className="text-sm">
-              Daily Rent
-            </Label>
-            <Input id="daily-rent" value={`${dailyRent.toFixed(2)} DAI`} readOnly className="mt-1" />
+            <Input
+              id="daily-tax"
+              value={`${dailyTax.toFixed(2)} DAI`}
+              readOnly
+              className="mt-1"
+            />
           </div>
         </div>
 
@@ -97,8 +148,9 @@ export function HarbergerPricing() {
       </div>
 
       <div className="text-xs text-stone-500">
-        Note: You only pay while you hold the slot. Taxes fund community resources.
+        Note: You only pay while you hold the slot. Taxes fund community
+        resources.
       </div>
     </div>
-  )
+  );
 }

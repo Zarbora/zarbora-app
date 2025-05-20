@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { api } from "@/lib/api";
 import {
   AlertCircle,
   Clock,
@@ -33,55 +34,49 @@ import {
 import { formatDate } from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
 import { Separator } from "@/components/ui/separator";
+import type { Database } from "@/types/supabase";
+
+type Resource = Database["public"]["Tables"]["resources"]["Row"];
 
 interface ResourceDetailsDialogProps {
-  resource: any;
+  resource: Resource | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onResourceUpdated: () => void;
 }
 
 export function ResourceDetailsDialog({
   resource,
   open,
   onOpenChange,
+  onResourceUpdated,
 }: ResourceDetailsDialogProps) {
   const { address } = useAuth();
-  const [valuation, setValuation] = useState(
-    resource.currentOwner
-      ? resource.currentValue
-      : resource.currentDepreciatedValue || resource.currentValue
-  );
-  const [activeTab, setActiveTab] = useState(
-    resource.currentOwner ? "details" : "claim"
-  );
-  const Icon = resource.icon;
-  const isOwner = resource.currentOwner === address;
-  const [isReleaseRequested, setIsReleaseRequested] = useState(
-    resource.releaseRequested || false
-  );
+  const [isReleaseRequested, setIsReleaseRequested] = useState(false);
+  const [newValue, setNewValue] = useState(resource?.current_value || 0);
+  const [isUpdatingValue, setIsUpdatingValue] = useState(false);
 
-  const taxRate = 0.1; // 10% Harberger tax rate
-  const dailyTax = valuation * taxRate;
-  const monthlyTax = dailyTax * 30;
+  const isOwner = resource?.current_owner_address === address;
 
-  // Calculate release status
   const calculateReleaseStatus = () => {
-    if (!resource.currentOwner) return null;
+    if (!resource?.current_owner_address) return null;
 
     const now = new Date();
-    const acquiredDate = new Date(resource.acquiredDate);
+    const acquiredDate = new Date(resource.acquired_date || now);
     const minHoldingEndDate = new Date(acquiredDate);
     minHoldingEndDate.setDate(
-      minHoldingEndDate.getDate() + resource.minHoldingPeriod
+      minHoldingEndDate.getDate() + (resource.min_holding_period || 0)
     );
 
     const daysUntilReleasable = Math.ceil(
       (minHoldingEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     );
 
-    if (isReleaseRequested) {
-      const releaseDate = new Date(resource.releaseRequestDate || new Date());
-      releaseDate.setDate(releaseDate.getDate() + resource.releaseNotice);
+    if (isReleaseRequested || resource.release_requested) {
+      const releaseDate = new Date(resource.release_request_date || now);
+      releaseDate.setDate(
+        releaseDate.getDate() + (resource.release_notice || 0)
+      );
       const daysUntilRelease = Math.ceil(
         (releaseDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
       );
@@ -105,40 +100,66 @@ export function ResourceDetailsDialog({
     return {
       status: "releasable",
       days: 0,
-      message: `Can be released with ${resource.releaseNotice} days notice`,
+      message: `Can be released with ${resource.release_notice} ${resource.release_notice_unit}`,
       canRequestRelease: true,
     };
   };
 
-  const releaseStatus = resource.currentOwner ? calculateReleaseStatus() : null;
+  const releaseStatus = resource?.current_owner_address
+    ? calculateReleaseStatus()
+    : null;
 
-  const handleRequestRelease = () => {
-    // In a real app, this would call the smart contract
-    setIsReleaseRequested(true);
+  const handleRequestRelease = async () => {
+    if (!resource) return;
+
+    try {
+      await api.resources.requestRelease(resource.id);
+      setIsReleaseRequested(true);
+      onResourceUpdated();
+    } catch (error) {
+      console.error("Failed to request release:", error);
+    }
   };
+
+  const handleUpdateValue = async () => {
+    if (!resource || !isOwner) return;
+
+    try {
+      setIsUpdatingValue(true);
+      await api.resources.update(resource.id, {
+        current_value: newValue,
+      });
+      onResourceUpdated();
+    } catch (error) {
+      console.error("Failed to update value:", error);
+    } finally {
+      setIsUpdatingValue(false);
+    }
+  };
+
+  if (!resource) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <div className="flex items-center space-x-2">
-            <div className="rounded-full bg-stone-100 p-2">
-              <Icon className="h-5 w-5 text-stone-600" />
-            </div>
-            <DialogTitle className="text-xl">{resource.name}</DialogTitle>
-          </div>
-          <DialogDescription className="flex items-center text-sm">
-            <MapPin className="mr-1 h-3 w-3" />
-            {resource.location}
+          <DialogTitle className="text-2xl">{resource.name}</DialogTitle>
+          <DialogDescription className="flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            {resource.zone_id}
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="details">Resource Details</TabsTrigger>
-            <TabsTrigger value="claim">
-              {resource.currentOwner ? "Buy Resource" : "Claim Resource"}
+        <Tabs defaultValue="details" className="w-full">
+          <TabsList className="w-full">
+            <TabsTrigger value="details" className="flex-1">
+              Details
             </TabsTrigger>
+            {isOwner && (
+              <TabsTrigger value="manage" className="flex-1">
+                Manage
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="details" className="space-y-4 pt-4">
@@ -155,12 +176,7 @@ export function ResourceDetailsDialog({
                   Current Value
                 </h3>
                 <p className="text-sm text-stone-600">
-                  {resource.currentOwner
-                    ? `${resource.currentValue} DAI`
-                    : `${
-                        resource.currentDepreciatedValue ||
-                        resource.currentValue
-                      } DAI`}
+                  {resource.current_value} DAI
                 </p>
               </div>
               <div className="space-y-1">
@@ -168,173 +184,175 @@ export function ResourceDetailsDialog({
                   Daily Tax
                 </h3>
                 <p className="text-sm text-stone-600">
-                  {resource.dailyTax} DAI
+                  {resource.daily_tax} DAI
                 </p>
               </div>
-              {resource.currentOwner && (
-                <>
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-medium text-stone-800">
-                      Current Owner
-                    </h3>
-                    <p className="text-sm text-stone-600">
-                      {resource.ownerName || resource.currentOwner}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-medium text-stone-800">
-                      Occupancy Until
-                    </h3>
-                    <p className="text-sm text-stone-600">
-                      {resource.occupancyEnds
-                        ? formatDate(resource.occupancyEnds)
-                        : "N/A"}
-                    </p>
-                  </div>
-                </>
-              )}
             </div>
 
-            {resource.depreciating && !resource.currentOwner && (
-              <Alert>
-                <Clock className="h-4 w-4" />
-                <AlertTitle>Price Depreciation Active</AlertTitle>
-                <AlertDescription>
-                  This resource's price is decreasing by{" "}
-                  {resource.depreciationRate} DAI per day while unoccupied.
-                  Original value: {resource.originalValue} DAI.
-                </AlertDescription>
-              </Alert>
+            {resource.depreciating && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-stone-800">
+                  Depreciation
+                </h3>
+                <div className="rounded-lg border p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-stone-600">Original Value</p>
+                      <p className="text-sm font-medium">
+                        {resource.original_value} DAI
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-stone-600">Daily Rate</p>
+                      <p className="text-sm font-medium">
+                        {resource.depreciation_rate} DAI
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
 
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium text-stone-800">Amenities</h3>
-              <div className="flex flex-wrap gap-2">
-                {resource.amenities.map((amenity: string) => (
-                  <Badge key={amenity} variant="outline">
-                    {amenity}
-                  </Badge>
-                ))}
+            {resource.current_owner_address && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-stone-800">
+                  Current Owner
+                </h3>
+                <div className="rounded-lg border p-4">
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-sm text-stone-600">Address</p>
+                      <p className="text-sm font-medium">
+                        {resource.current_owner_address}
+                      </p>
+                    </div>
+                    {resource.current_owner_name && (
+                      <div>
+                        <p className="text-sm text-stone-600">Name</p>
+                        <p className="text-sm font-medium">
+                          {resource.current_owner_name}
+                        </p>
+                      </div>
+                    )}
+                    {resource.acquired_date && (
+                      <div>
+                        <p className="text-sm text-stone-600">Acquired</p>
+                        <p className="text-sm font-medium">
+                          {formatDate(resource.acquired_date)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </TabsContent>
 
-          <TabsContent value="claim" className="space-y-4 pt-4">
-            <Alert className="bg-stone-50">
-              <Info className="h-4 w-4" />
-              <AlertTitle>Harberger Tax System</AlertTitle>
-              <AlertDescription>
-                1. You set your valuation for this resource
-                <br />
-                2. You pay a continuous tax based on your valuation
-                <br />
-                3. Anyone can buy this resource from you at your stated price
-                <br />
-                4. Higher valuations = higher taxes but more security
-              </AlertDescription>
-            </Alert>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label
-                    htmlFor="valuation"
-                    className="text-sm flex items-center"
-                  >
-                    Your Valuation (DAI)
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 ml-1"
-                          >
-                            <HelpCircle className="h-3 w-3" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p>
-                            Set your honest valuation. Too high = pay more tax.
-                            Too low = risk someone buying it from you.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </Label>
-                  <span className="text-sm font-medium">{valuation} DAI</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Slider
-                    id="valuation"
-                    min={10}
-                    max={500}
-                    step={5}
-                    value={[valuation]}
-                    onValueChange={(value) => setValuation(value[0])}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="daily-tax" className="text-sm">
-                    Daily Tax
-                  </Label>
-                  <Input
-                    id="daily-tax"
-                    value={`${dailyTax.toFixed(2)} DAI`}
-                    readOnly
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="monthly-tax" className="text-sm">
-                    Monthly Tax
-                  </Label>
-                  <Input
-                    id="monthly-tax"
-                    value={`${monthlyTax.toFixed(2)} DAI`}
-                    readOnly
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-
-              {resource.currentOwner ? (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Buy From Current Owner</AlertTitle>
-                  <AlertDescription>
-                    You are about to buy this resource from{" "}
-                    {resource.ownerName || resource.currentOwner} at their
-                    stated price of {resource.currentValue} DAI.
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <div className="rounded-md border border-stone-200 bg-stone-50 p-3">
+          {isOwner && (
+            <TabsContent value="manage" className="space-y-6 pt-4">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium text-stone-800">
+                    Update Value
+                  </h3>
                   <p className="text-sm text-stone-600">
-                    By claiming this resource, you agree to pay a continuous tax
-                    of {dailyTax.toFixed(2)} DAI per day based on your
-                    valuation. Anyone can purchase this resource from you at
-                    your stated price of {valuation} DAI.
+                    Set a new value for your resource. This will affect your
+                    daily tax payment.
                   </p>
                 </div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
 
-        <DialogFooter>
-          {activeTab === "claim" && (
-            <Button className="bg-stone-800 text-white hover:bg-stone-700">
-              <CreditCard className="mr-2 h-4 w-4" />
-              {resource.currentOwner
-                ? `Buy for ${resource.currentValue} DAI`
-                : `Claim for ${valuation} DAI`}
-            </Button>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="value">New Value (DAI)</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="value"
+                        type="number"
+                        value={newValue}
+                        onChange={(e) => setNewValue(Number(e.target.value))}
+                        min={0}
+                      />
+                      <Button
+                        onClick={handleUpdateValue}
+                        disabled={isUpdatingValue}
+                      >
+                        Update
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">New Daily Tax</p>
+                        <p className="text-2xl font-bold">
+                          {(newValue * 0.1).toFixed(2)} DAI
+                        </p>
+                      </div>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <HelpCircle className="h-4 w-4" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>10% annual tax rate, paid daily</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium text-stone-800">
+                    Release Resource
+                  </h3>
+                  <p className="text-sm text-stone-600">
+                    Request to release this resource. This will make it
+                    available for others to claim.
+                  </p>
+                </div>
+
+                {releaseStatus && (
+                  <Alert
+                    variant={
+                      releaseStatus.status === "releasing"
+                        ? "destructive"
+                        : releaseStatus.status === "locked"
+                        ? "destructive"
+                        : "default"
+                    }
+                  >
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>
+                      {releaseStatus.status === "releasing"
+                        ? "Release in Progress"
+                        : releaseStatus.status === "locked"
+                        ? "Holding Period"
+                        : "Ready to Release"}
+                    </AlertTitle>
+                    <AlertDescription>{releaseStatus.message}</AlertDescription>
+                  </Alert>
+                )}
+
+                <Button
+                  variant="destructive"
+                  onClick={handleRequestRelease}
+                  disabled={
+                    !releaseStatus?.canRequestRelease || isReleaseRequested
+                  }
+                  className="w-full"
+                >
+                  Request Release
+                </Button>
+              </div>
+            </TabsContent>
           )}
-        </DialogFooter>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

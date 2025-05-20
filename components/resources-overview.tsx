@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 import {
   Building,
   Car,
@@ -10,6 +11,7 @@ import {
   Shirt,
   Plus,
   Edit,
+  AlertCircle,
 } from "lucide-react";
 import {
   Card,
@@ -30,177 +32,97 @@ import { ResourceCard } from "./resource-card";
 import { ResourceDetailsDialog } from "./resource-details-dialog";
 import { ResourceFormDialog } from "./resource-form-dialog";
 import { Button } from "@/components/ui/button";
+import type { Database } from "@/types/supabase";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// Sample city zones data
-const cityZones = [
-  {
-    id: 1,
-    name: "Residential Zone",
-    icon: Home,
-    description: "Living spaces and community areas for residents",
-    taxRate: 10,
-  },
-  {
-    id: 2,
-    name: "Innovation Zone",
-    icon: Building,
-    description: "Workspaces and labs for research and development",
-    taxRate: 8,
-  },
-  {
-    id: 3,
-    name: "Community Hub",
-    icon: Home,
-    description: "Gathering spaces for events and collaboration",
-    taxRate: 12,
-  },
-  {
-    id: 4,
-    name: "Mobility Hub",
-    icon: Car,
-    description: "Transportation resources for the community",
-    taxRate: 15,
-  },
-  {
-    id: 5,
-    name: "Wellness Area",
-    icon: Home,
-    description: "Spaces for health, fitness, and relaxation",
-    taxRate: 7,
-  },
-];
+type Resource = Database["public"]["Tables"]["resources"]["Row"];
+type Zone = Database["public"]["Tables"]["zones"]["Row"];
 
-// Sample resource data
-const resources = [
-  {
-    id: 1,
-    name: "Apartment 3B",
-    type: "housing",
-    icon: Home,
-    currentValue: 250,
-    dailyTax: 25,
-    currentOwner: "0x1a2...3b4c",
-    ownerName: "Alex Rivera",
-    description: "2-bedroom apartment with balcony, close to community kitchen",
-    location: "Residential Zone",
-    amenities: ["Wifi", "Kitchen", "Workspace"],
-    occupancyEnds: "2024-06-15",
-    depreciating: false,
-  },
-  {
-    id: 2,
-    name: "Coworking Desk #12",
-    type: "workspace",
-    icon: Building,
-    currentValue: 50,
-    dailyTax: 5,
-    currentOwner: "0x4d5...6e7f",
-    ownerName: "Maya Chen",
-    description:
-      "Standing desk with dual monitor setup in the main coworking space",
-    location: "Innovation Zone",
-    amenities: ["Ergonomic Chair", "Monitors", "High-speed Internet"],
-    occupancyEnds: "2024-05-25",
-    depreciating: true,
-    originalValue: 80,
-    depreciationRate: 5,
-  },
-  {
-    id: 3,
-    name: "Community Car #2",
-    type: "vehicle",
-    icon: Car,
-    currentValue: 120,
-    dailyTax: 12,
-    currentOwner: "0x7g8...9h0i",
-    ownerName: "Jamal Washington",
-    description: "Electric sedan, 4-seater with 300km range",
-    location: "Mobility Hub",
-    amenities: ["Electric", "GPS", "Charging Cable"],
-    occupancyEnds: "2024-05-20",
-    depreciating: true,
-    originalValue: 150,
-    depreciationRate: 3,
-  },
-  {
-    id: 4,
-    name: "E-Bike #7",
-    type: "vehicle",
-    icon: Bike,
-    currentValue: 30,
-    dailyTax: 3,
-    currentOwner: null,
-    ownerName: null,
-    description: "Electric bike with cargo basket, 60km range",
-    location: "Mobility Hub",
-    amenities: ["Electric", "Cargo Basket", "Helmet"],
-    occupancyEnds: null,
-    depreciating: true,
-    originalValue: 50,
-    depreciationRate: 2,
-    currentDepreciatedValue: 38,
-  },
-  {
-    id: 5,
-    name: "Laundry Room Slot",
-    type: "utility",
-    icon: Shirt,
-    currentValue: 15,
-    dailyTax: 1.5,
-    currentOwner: null,
-    ownerName: null,
-    description: "2-hour slot for using the community laundry facilities",
-    location: "Residential Zone",
-    amenities: ["Washer", "Dryer", "Detergent Available"],
-    occupancyEnds: null,
-    depreciating: true,
-    originalValue: 25,
-    depreciationRate: 1,
-    currentDepreciatedValue: 20,
-  },
-];
+interface ResourcesOverviewProps {
+  societyId: string;
+}
 
-export function ResourcesOverview() {
+export function ResourcesOverview({ societyId }: ResourcesOverviewProps) {
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
-  const [selectedResource, setSelectedResource] = useState<any>(null);
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(
+    null
+  );
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
-  const [resourceToEdit, setResourceToEdit] = useState<any>(null);
+  const [resourceToEdit, setResourceToEdit] = useState<Resource | null>(null);
+
+  useEffect(() => {
+    if (!societyId) {
+      setError("Society ID is required");
+      setIsLoading(false);
+      return;
+    }
+    loadData();
+  }, [societyId]);
+
+  async function loadData() {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const [resourcesData, zonesData] = await Promise.all([
+        api.resources.getBySociety(societyId),
+        api.zones.getBySociety(societyId),
+      ]);
+      setResources(resourcesData || []);
+      setZones(zonesData || []);
+    } catch (error) {
+      console.error("Failed to load data:", error);
+      setError(error instanceof Error ? error.message : "Failed to load data");
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   // Filter resources based on search term, type, and status
   const filteredResources = resources.filter((resource) => {
     const matchesSearch =
       resource.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      resource.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (resource.ownerName &&
-        resource.ownerName.toLowerCase().includes(searchTerm.toLowerCase()));
+      resource.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (resource.current_owner_name &&
+        resource.current_owner_name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()));
 
     const matchesType =
       selectedType === "all" || resource.type === selectedType;
 
     const matchesStatus =
       selectedStatus === "all" ||
-      (selectedStatus === "occupied" && resource.currentOwner) ||
-      (selectedStatus === "available" && !resource.currentOwner);
+      (selectedStatus === "occupied" && resource.current_owner_address) ||
+      (selectedStatus === "available" && !resource.current_owner_address);
 
     return matchesSearch && matchesType && matchesStatus;
   });
 
-  const handleResourceClick = (resource: any) => {
+  const handleResourceClick = (resource: Resource) => {
     setSelectedResource(resource);
     setIsDetailsDialogOpen(true);
   };
 
   const handleAddResource = () => {
-    setResourceToEdit(null);
+    setSelectedResource(null);
     setIsFormDialogOpen(true);
   };
 
-  const handleEditResource = (resource: any) => {
+  const handleEditResource = (resource: Resource) => {
     setResourceToEdit(resource);
     setIsFormDialogOpen(true);
+  };
+
+  const handleResourceCreated = async () => {
+    await loadData();
+    setIsFormDialogOpen(false);
   };
 
   return (
@@ -223,74 +145,100 @@ export function ResourcesOverview() {
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div>
-              <Input
-                placeholder="Search resources..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
-              />
+          {error ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-stone-800" />
             </div>
-            <div>
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Resource type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="housing">Housing</SelectItem>
-                  <SelectItem value="workspace">Workspace</SelectItem>
-                  <SelectItem value="vehicle">Vehicles</SelectItem>
-                  <SelectItem value="utility">Utilities</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="occupied">Currently Occupied</SelectItem>
-                  <SelectItem value="available">Available</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div>
+                  <Input
+                    placeholder="Search resources..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <Select value={selectedType} onValueChange={setSelectedType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Resource type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="housing">Housing</SelectItem>
+                      <SelectItem value="workspace">Workspace</SelectItem>
+                      <SelectItem value="vehicle">Vehicles</SelectItem>
+                      <SelectItem value="utility">Utilities</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Select
+                    value={selectedStatus}
+                    onValueChange={setSelectedStatus}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="occupied">
+                        Currently Occupied
+                      </SelectItem>
+                      <SelectItem value="available">Available</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
+                {filteredResources.length === 0 ? (
+                  <div className="col-span-full text-center py-8 text-stone-500">
+                    No resources found
+                  </div>
+                ) : (
+                  filteredResources.map((resource) => (
+                    <div key={resource.id} className="relative group">
+                      <ResourceCard
+                        resource={resource}
+                        onClick={() => handleResourceClick(resource)}
+                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleEditResource(resource);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                        <span className="sr-only">Edit {resource.name}</span>
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
-
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredResources.map((resource) => (
-          <div key={resource.id} className="relative group">
-            <ResourceCard
-              resource={resource}
-              onClick={() => handleResourceClick(resource)}
-            />
-            <Button
-              variant="outline"
-              size="icon"
-              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleEditResource(resource);
-              }}
-            >
-              <Edit className="h-4 w-4" />
-              <span className="sr-only">Edit {resource.name}</span>
-            </Button>
-          </div>
-        ))}
-      </div>
 
       {selectedResource && (
         <ResourceDetailsDialog
           resource={selectedResource}
           open={isDetailsDialogOpen}
           onOpenChange={setIsDetailsDialogOpen}
+          onResourceUpdated={loadData}
         />
       )}
 
@@ -298,7 +246,8 @@ export function ResourcesOverview() {
         open={isFormDialogOpen}
         onOpenChange={setIsFormDialogOpen}
         resource={resourceToEdit}
-        cityZones={cityZones}
+        cityZones={zones}
+        onResourceCreated={handleResourceCreated}
       />
     </div>
   );

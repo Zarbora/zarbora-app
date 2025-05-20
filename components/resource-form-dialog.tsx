@@ -31,6 +31,7 @@ interface ResourceFormDialogProps {
   onOpenChange: (open: boolean) => void;
   resource?: any; // For editing existing resource
   cityZones: any[]; // Available city zones
+  onResourceCreated?: () => Promise<void>;
 }
 
 export function ResourceFormDialog({
@@ -38,6 +39,7 @@ export function ResourceFormDialog({
   onOpenChange,
   resource,
   cityZones,
+  onResourceCreated,
 }: ResourceFormDialogProps) {
   const isEditing = !!resource;
   const [formData, setFormData] = useState(() => ({
@@ -111,18 +113,27 @@ export function ResourceFormDialog({
     }));
   };
 
-  const handleSubmit = () => {
-    // In a real app, this would send the data to the backend
-    console.log("Resource form submitted:", formData);
+  const handleSubmit = async () => {
+    try {
+      // In a real app, this would send the data to the backend
+      console.log("Resource form submitted:", formData);
 
-    // Simulate creating a proposal
-    setProposalCreated(true);
+      // Simulate creating a proposal
+      setProposalCreated(true);
 
-    // In a real app, we would redirect to the proposal page or show a success message
-    setTimeout(() => {
-      setProposalCreated(false);
-      onOpenChange(false);
-    }, 3000);
+      // Call the onResourceCreated callback if provided
+      if (onResourceCreated) {
+        await onResourceCreated();
+      }
+
+      // In a real app, we would redirect to the proposal page or show a success message
+      setTimeout(() => {
+        setProposalCreated(false);
+        onOpenChange(false);
+      }, 3000);
+    } catch (error) {
+      console.error("Failed to create/update resource:", error);
+    }
   };
 
   const getIconForType = (type: string) => {
