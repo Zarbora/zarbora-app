@@ -16,19 +16,15 @@ export function LoginButton() {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted || isConnected) return null;
 
   return (
     <Button
       onClick={() => open({ view: "Connect" })}
-      className={`${
-        isConnected
-          ? "bg-stone-100 text-stone-800 hover:bg-stone-200"
-          : "bg-stone-800 text-white hover:bg-stone-700"
-      }`}
+      className="bg-stone-800 text-white hover:bg-stone-700"
     >
       <Wallet className="mr-2 h-4 w-4" />
-      {isConnected ? "Switch Wallet" : "Connect Wallet"}
+      Connect Wallet
     </Button>
   );
 }
