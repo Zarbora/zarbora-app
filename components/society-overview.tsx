@@ -25,35 +25,71 @@ import { Textarea } from "@/components/ui/textarea";
 import { Building2, Users, Vote } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { api } from "@/lib/api";
-import type { Society } from "@/lib/api";
+import type { Society, MembershipRequest } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
+import { JoinSocietyDialog } from "./JoinSocietyDialog";
 
 export function SocietyOverview() {
   const router = useRouter();
   const { address } = useAuth();
   const [societies, setSocieties] = useState<Society[]>([]);
+  const [membershipStatus, setMembershipStatus] = useState<
+    Record<string, string>
+  >({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newSociety, setNewSociety] = useState({
     name: "",
     description: "",
   });
+  const [selectedSociety, setSelectedSociety] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadSocieties() {
-      try {
-        const data = await api.societies.getAll();
-        setSocieties(data);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to load societies"
-        );
-      } finally {
-        setLoading(false);
-      }
-    }
+    loadData();
+  }, [address]);
 
-    loadSocieties();
-  }, []);
+  async function loadData() {
+    try {
+      const societiesData = await api.societies.getAll();
+      setSocieties(societiesData);
+
+      if (address) {
+        // Load membership status for each society
+        const statuses: Record<string, string> = {};
+        await Promise.all(
+          societiesData.map(async (society) => {
+            // Check if already a member
+            const members = await api.members.getAll(society.id);
+            const isMember = members.some(
+              (m) => m.address.toLowerCase() === address.toLowerCase()
+            );
+            if (isMember) {
+              statuses[society.id] = "member";
+              return;
+            }
+
+            // Check pending requests
+            const requests = await api.members.getMembershipRequests(
+              society.id
+            );
+            const userRequest = requests.find(
+              (r) => r.applicant_address === address
+            );
+            if (userRequest) {
+              statuses[society.id] = userRequest.status;
+            } else {
+              statuses[society.id] = "none";
+            }
+          })
+        );
+        setMembershipStatus(statuses);
+      }
+    } catch (error) {
+      console.error("Failed to load societies:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const handleCreateSociety = async () => {
     if (!address) return;
@@ -75,6 +111,21 @@ export function SocietyOverview() {
   const handleViewSociety = (societyId: string) => {
     router.push(`/society/${societyId}`);
   };
+
+  function getMembershipBadge(status: string) {
+    switch (status) {
+      case "member":
+        return <Badge variant="default">Member</Badge>;
+      case "pending":
+        return <Badge variant="secondary">Request Pending</Badge>;
+      case "approved":
+        return <Badge variant="default">Approved</Badge>;
+      case "rejected":
+        return <Badge variant="destructive">Rejected</Badge>;
+      default:
+        return null;
+    }
+  }
 
   if (loading) {
     return <div>Loading societies...</div>;
@@ -188,18 +239,31 @@ export function SocietyOverview() {
                 </div>
               </div>
               <div className="mt-4 flex gap-2">
-                <Button
-                  onClick={() => handleViewSociety(society.id)}
-                  size="sm"
-                  className="flex-1 bg-stone-800 text-white hover:bg-stone-700"
-                >
-                  Enter Society
-                </Button>
+                {membershipStatus[society.id] === "member" ? (
+                  <Button
+                    onClick={() => handleViewSociety(society.id)}
+                    size="sm"
+                    className="flex-1 bg-stone-800 text-white hover:bg-stone-700"
+                  >
+                    Enter Society
+                  </Button>
+                ) : membershipStatus[society.id] === "none" ? (
+                  <Button onClick={() => setSelectedSociety(society.id)}>
+                    Join Society
+                  </Button>
+                ) : null}
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      <JoinSocietyDialog
+        societyId={selectedSociety || ""}
+        open={!!selectedSociety}
+        onOpenChange={(open) => !open && setSelectedSociety(null)}
+        onSuccess={loadData}
+      />
     </div>
   );
 }

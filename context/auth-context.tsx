@@ -25,70 +25,82 @@ createWeb3Modal({
   enableAnalytics: true, // Optional - defaults to your Cloud configuration
 });
 
-type AuthContextType = {
+declare global {
+  interface Window {
+    ethereum?: {
+      request: (args: { method: string }) => Promise<string[]>;
+    };
+  }
+}
+
+interface AuthContextType {
   isConnected: boolean;
-  address: string | undefined;
-  displayName: string | undefined;
   isLoading: boolean;
-  openConnectModal: () => void;
-  disconnect: () => void;
-};
+  address: string | null;
+  connect: () => Promise<void>;
+}
 
 const AuthContext = createContext<AuthContextType>({
   isConnected: false,
-  address: undefined,
-  displayName: undefined,
   isLoading: true,
-  openConnectModal: () => {},
-  disconnect: () => {},
+  address: null,
+  connect: async () => {},
 });
 
-export const useAuth = () => useContext(AuthContext);
-
-function AuthProvider({ children }: { children: ReactNode }) {
-  const { address, isConnected } = useAccount();
-  const { disconnect: wagmiDisconnect } = useDisconnect();
-  const { open } = useWeb3Modal();
-  const [displayName, setDisplayName] = useState<string | undefined>(undefined);
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [address, setAddress] = useState<string | null>(null);
 
   useEffect(() => {
-    if (address) {
-      setDisplayName(
-        `${address.substring(0, 6)}...${address.substring(address.length - 4)}`
-      );
-    } else {
-      setDisplayName(undefined);
-    }
-    setIsLoading(false);
-  }, [address]);
+    checkConnection();
+  }, []);
 
-  const openConnectModal = () => {
-    open({ view: "Connect" });
-  };
-
-  const disconnect = async () => {
+  async function checkConnection() {
     try {
-      wagmiDisconnect();
+      // Check if wallet is connected
+      if (typeof window.ethereum !== "undefined") {
+        const accounts = await window.ethereum.request({
+          method: "eth_accounts",
+        });
+        if (accounts.length > 0) {
+          setAddress(accounts[0]);
+          setIsConnected(true);
+        }
+      }
     } catch (error) {
-      console.error("Failed to disconnect:", error);
+      console.error("Failed to check wallet connection:", error);
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }
+
+  async function connect() {
+    try {
+      if (typeof window.ethereum !== "undefined") {
+        const accounts = await window.ethereum.request({
+          method: "eth_requestAccounts",
+        });
+        setAddress(accounts[0]);
+        setIsConnected(true);
+      } else {
+        throw new Error("Please install MetaMask or another Web3 wallet");
+      }
+    } catch (error) {
+      console.error("Failed to connect wallet:", error);
+      throw error;
+    }
+  }
 
   return (
-    <AuthContext.Provider
-      value={{
-        isConnected,
-        address,
-        displayName,
-        isLoading,
-        openConnectModal,
-        disconnect,
-      }}
-    >
+    <AuthContext.Provider value={{ isConnected, isLoading, address, connect }}>
       {children}
     </AuthContext.Provider>
   );
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
 }
 
 export default function AppKitProvider({

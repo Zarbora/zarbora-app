@@ -4,10 +4,11 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { SocietyOverview } from "@/components/society-overview";
+import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
   const router = useRouter();
-  const { isConnected, isLoading } = useAuth();
+  const { isConnected, isLoading, connect } = useAuth();
 
   useEffect(() => {
     if (!isLoading && isConnected) {
@@ -35,7 +36,19 @@ export default function HomePage() {
         </p>
       </div>
 
-      <SocietyOverview />
+      {!isConnected ? (
+        <div className="text-center py-8">
+          <h2 className="text-xl font-semibold mb-4">Connect Your Wallet</h2>
+          <p className="text-muted-foreground mb-6">
+            Connect your wallet to view and join societies
+          </p>
+          <Button onClick={connect} size="lg">
+            Connect Wallet
+          </Button>
+        </div>
+      ) : (
+        <SocietyOverview />
+      )}
     </div>
   );
 }

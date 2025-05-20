@@ -155,6 +155,30 @@ export interface DashboardStats {
   resourceUtilizationRate: number;
 }
 
+export interface Member {
+  id: string;
+  society_id: string;
+  address: string;
+  name: string;
+  join_date: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MembershipRequest {
+  id: string;
+  society_id: string;
+  applicant_address: string;
+  applicant_name: string;
+  zupass_verified: boolean;
+  status: "pending" | "approved" | "rejected";
+  application_text?: string;
+  created_at: string;
+  updated_at: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
+}
+
 export const api = {
   societies: {
     async getAll() {
@@ -724,6 +748,111 @@ export const api = {
         handleSupabaseError(error);
       }
       return data;
+    },
+  },
+
+  members: {
+    async getAll(societyId: string) {
+      const { data, error } = await supabase
+        .from("members")
+        .select("*")
+        .eq("society_id", societyId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data as Member[];
+    },
+
+    async getMembershipRequests(societyId: string) {
+      const { data, error } = await supabase
+        .from("membership_requests")
+        .select("*")
+        .eq("society_id", societyId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data as MembershipRequest[];
+    },
+
+    async submitMembershipRequest(
+      request: Omit<
+        MembershipRequest,
+        | "id"
+        | "created_at"
+        | "updated_at"
+        | "status"
+        | "reviewed_by"
+        | "reviewed_at"
+      >
+    ) {
+      const { data, error } = await supabase
+        .from("membership_requests")
+        .insert([{ ...request, status: "pending" }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as MembershipRequest;
+    },
+
+    async reviewMembershipRequest(
+      requestId: string,
+      status: "approved" | "rejected",
+      reviewerId: string
+    ) {
+      const { data: request, error: requestError } = await supabase
+        .from("membership_requests")
+        .update({
+          status,
+          reviewed_by: reviewerId,
+          reviewed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", requestId)
+        .select()
+        .single();
+
+      if (requestError) throw requestError;
+
+      // If approved, create a new member
+      if (status === "approved") {
+        const { error: memberError } = await supabase.from("members").insert([
+          {
+            society_id: request.society_id,
+            address: request.applicant_address,
+            name: request.applicant_name,
+            join_date: new Date().toISOString(),
+          },
+        ]);
+
+        if (memberError) throw memberError;
+      }
+
+      return request as MembershipRequest;
+    },
+
+    async verifyZupass(address: string): Promise<boolean> {
+      // TODO: Implement actual Zupass verification
+      // This is a placeholder that always returns true
+      return true;
+    },
+
+    async create(
+      member: Omit<Member, "id" | "created_at" | "updated_at" | "join_date">
+    ) {
+      const { data, error } = await supabase
+        .from("members")
+        .insert([
+          {
+            ...member,
+            join_date: new Date().toISOString(),
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Member;
     },
   },
 };
