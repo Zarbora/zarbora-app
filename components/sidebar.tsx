@@ -70,7 +70,7 @@ export function Sidebar({ className }: { className?: string }) {
           href: `/society/${params.id}/governance`,
           icon: Vote,
         },
-        { name: "Members", href: `/society/${params.id}/members`, icon: Users },
+        // { name: "Members", href: `/society/${params.id}/members`, icon: Users },
       ]
     : [];
 

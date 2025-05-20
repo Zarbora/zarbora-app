@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ProtectedRoute } from "@/components/protected-route";
 
 interface Society {
   id: string;
@@ -38,7 +39,7 @@ export default function SocietyLayout({ children }: SocietyLayoutProps) {
     });
   }, [params.id]);
 
-  if (!mounted || !isConnected || !society) {
+  if (!mounted || !society) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-stone-300 dark:border-stone-600 border-t-stone-800 dark:border-t-stone-400"></div>
@@ -46,5 +47,5 @@ export default function SocietyLayout({ children }: SocietyLayoutProps) {
     );
   }
 
-  return children;
+  return <ProtectedRoute>{children}</ProtectedRoute>;
 }
