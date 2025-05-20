@@ -14,15 +14,17 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Wallet } from "lucide-react";
+import { useWeb3Modal } from "@web3modal/wagmi/react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isConnected, isLoading, openConnectModal } = useAuth();
+  const { isConnected, isLoading } = useAuth();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const { open } = useWeb3Modal();
 
   // Only check authentication after component has mounted
   useEffect(() => {
@@ -55,7 +57,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         </CardHeader>
         <CardContent>
           <Button
-            onClick={openConnectModal}
+            onClick={() => open({ view: "Connect" })}
             className="w-full bg-stone-800 text-white hover:bg-stone-700"
           >
             <Wallet className="mr-2 h-4 w-4" />
