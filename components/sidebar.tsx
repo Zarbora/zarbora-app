@@ -9,6 +9,7 @@ import {
   Vote,
   Users,
   Building2,
+  Mic2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
@@ -71,6 +72,11 @@ export function Sidebar({ className }: { className?: string }) {
           icon: Vote,
         },
         // { name: "Members", href: `/society/${params.id}/members`, icon: Users },
+        {
+          name: "Speakers",
+          href: `/society/${params.id}/speakers`,
+          icon: Mic2,
+        },
       ]
     : [];
 

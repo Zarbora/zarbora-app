@@ -1,4 +1,6 @@
-import { SpeakerProfileCard } from "@/components/speaker-profile-card"
+"use client";
+
+import { SpeakerProfileCard } from "@/components/speaker-profile-card";
 
 // Sample speaker data
 const speakers = [
@@ -56,21 +58,19 @@ const speakers = [
     pastSessions: 8,
     endorsements: 45,
   },
-]
+];
 
 export default function SpeakersPage() {
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="mb-6 text-2xl font-medium text-stone-800">Community Speakers</h1>
-      <p className="mb-8 text-stone-600">
-        These are the community members who have hosted or are planning to host sessions. Profiles are soulbound and
-        reflect past contributions, not gatekeeping mechanisms.
-      </p>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {speakers.map((speaker) => (
-          <SpeakerProfileCard key={speaker.id} {...speaker} />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Speakers</h1>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {speakers.map((speaker, index) => (
+          <SpeakerProfileCard key={index} {...speaker} />
         ))}
       </div>
     </div>
-  )
+  );
 }
