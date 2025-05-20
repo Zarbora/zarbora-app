@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import type { Member, MembershipRequest } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/context/auth-context";
 import {
   Dialog,
   DialogContent,
@@ -35,6 +36,7 @@ export default function MembersPage() {
   const params = useParams();
   const societyId = params.id as string;
   const { toast } = useToast();
+  const { address } = useAuth();
 
   const [members, setMembers] = useState<Member[]>([]);
   const [requests, setRequests] = useState<MembershipRequest[]>([]);
@@ -104,22 +106,31 @@ export default function MembersPage() {
     requestId: string,
     status: "approved" | "rejected"
   ) {
+    if (!address) {
+      toast({
+        title: "Error",
+        description: "You must be connected to perform this action",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setLoading(true);
-      await api.members.reviewMembershipRequest(
-        requestId,
-        status,
-        "current-admin-id"
-      ); // TODO: Get actual admin ID
+      await api.members.reviewMembershipRequest(requestId, status, address);
       toast({
         title: "Success",
         description: `Membership request ${status}`,
       });
       loadData();
     } catch (err) {
+      console.error("Error reviewing membership request:", err);
       toast({
         title: "Error",
-        description: `Failed to ${status} request`,
+        description:
+          err instanceof Error && err.message === "Reviewer identity not found"
+            ? "You must be a member of this society to review membership requests"
+            : `Failed to ${status} request`,
         variant: "destructive",
       });
     } finally {
@@ -153,7 +164,7 @@ export default function MembersPage() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Address</TableHead>
-                <TableHead>Join Date</TableHead>
+                <TableHead>Member Since</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -162,7 +173,7 @@ export default function MembersPage() {
                   <TableCell>{member.name}</TableCell>
                   <TableCell className="font-mono">{member.address}</TableCell>
                   <TableCell>
-                    {new Date(member.join_date).toLocaleDateString()}
+                    {new Date(member.created_at).toLocaleDateString()}
                   </TableCell>
                 </TableRow>
               ))}

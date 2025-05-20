@@ -160,7 +160,6 @@ export interface Member {
   society_id: string;
   address: string;
   name: string;
-  join_date: string;
   created_at: string;
   updated_at: string;
 }
@@ -538,6 +537,25 @@ export const api = {
       }
       return data;
     },
+
+    async getByAddressAndSociety(address: string, societyId: string) {
+      if (!address || !societyId) {
+        throw new Error("address and societyId are required");
+      }
+
+      const { data, error } = await supabase
+        .from("identity")
+        .select("*")
+        .eq("society_id", societyId)
+        .eq("address", address.toLowerCase())
+        .single();
+
+      if (error) {
+        console.error("Error fetching identity:", error);
+        handleSupabaseError(error);
+      }
+      return data;
+    },
   },
 
   harbergerSlots: {
@@ -798,13 +816,40 @@ export const api = {
     async reviewMembershipRequest(
       requestId: string,
       status: "approved" | "rejected",
-      reviewerId: string
+      reviewerAddress: string
     ) {
+      // First get the membership request to get the society_id
       const { data: request, error: requestError } = await supabase
+        .from("membership_requests")
+        .select("society_id")
+        .eq("id", requestId)
+        .single();
+
+      if (requestError) throw requestError;
+
+      // Get all members of the society
+      const { data: members, error: membersError } = await supabase
+        .from("members")
+        .select("*")
+        .eq("society_id", request.society_id);
+
+      if (membersError) throw membersError;
+
+      // Find the reviewer in the members list (case-insensitive address comparison)
+      const reviewerMember = members.find(
+        (m) => m.address.toLowerCase() === reviewerAddress.toLowerCase()
+      );
+
+      if (!reviewerMember) {
+        throw new Error("Reviewer is not a member of this society");
+      }
+
+      // Update the membership request
+      const { data: updatedRequest, error: updateError } = await supabase
         .from("membership_requests")
         .update({
           status,
-          reviewed_by: reviewerId,
+          reviewed_by: reviewerMember.id,
           reviewed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
@@ -812,23 +857,22 @@ export const api = {
         .select()
         .single();
 
-      if (requestError) throw requestError;
+      if (updateError) throw updateError;
 
       // If approved, create a new member
       if (status === "approved") {
         const { error: memberError } = await supabase.from("members").insert([
           {
-            society_id: request.society_id,
-            address: request.applicant_address,
-            name: request.applicant_name,
-            join_date: new Date().toISOString(),
+            society_id: updatedRequest.society_id,
+            address: updatedRequest.applicant_address.toLowerCase(),
+            name: updatedRequest.applicant_name,
           },
         ]);
 
         if (memberError) throw memberError;
       }
 
-      return request as MembershipRequest;
+      return updatedRequest as MembershipRequest;
     },
 
     async verifyZupass(address: string): Promise<boolean> {
@@ -837,15 +881,13 @@ export const api = {
       return true;
     },
 
-    async create(
-      member: Omit<Member, "id" | "created_at" | "updated_at" | "join_date">
-    ) {
+    async create(member: Omit<Member, "id" | "created_at" | "updated_at">) {
       const { data, error } = await supabase
         .from("members")
         .insert([
           {
             ...member,
-            join_date: new Date().toISOString(),
+            address: member.address.toLowerCase(),
           },
         ])
         .select()
