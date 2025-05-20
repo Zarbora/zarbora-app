@@ -39,11 +39,10 @@ export interface Zone {
   tax_rate: number;
   resource_count: number;
   occupancy_rate: number;
-  resource_types: string[];
-  total_value: number;
   daily_tax_revenue: number;
-  eligibility_rules: string[];
-  custom_hooks: string[];
+  custom_hooks?: string[];
+  zone_resource_types?: Array<{ resource_type: string }>;
+  zone_eligibility_rules?: Array<{ rule: string }>;
 }
 
 export interface ResourcePool {
@@ -225,6 +224,25 @@ export const api = {
 
       if (error) {
         console.error("Error creating zone:", error);
+        handleSupabaseError(error);
+      }
+      return data;
+    },
+
+    async update(id: string, updates: Partial<Zone>) {
+      if (!id) {
+        throw new Error("id is required");
+      }
+
+      const { data, error } = await supabase
+        .from("zones")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error updating zone:", error);
         handleSupabaseError(error);
       }
       return data;
