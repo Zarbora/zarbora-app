@@ -1,6 +1,16 @@
 "use client";
 
-import { MapPin, Tag, Clock, AlertCircle } from "lucide-react";
+import {
+  MapPin,
+  Tag,
+  Clock,
+  AlertCircle,
+  Building,
+  Car,
+  Home,
+  Bike,
+  Shirt,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,8 +34,18 @@ interface ResourceCardProps {
   onClick: () => void;
 }
 
+// Map icon string to Lucide icon component
+const iconMap: Record<string, React.ElementType> = {
+  Building,
+  Car,
+  Home,
+  Bike,
+  Shirt,
+};
+
 export function ResourceCard({ resource, onClick }: ResourceCardProps) {
-  const Icon = resource.icon;
+  // Use icon string to get the correct component, fallback to Building
+  const Icon = iconMap[resource.icon] || Building;
 
   // Calculate the depreciation progress if applicable
   const depreciationProgress =
@@ -198,31 +218,27 @@ export function ResourceCard({ resource, onClick }: ResourceCardProps) {
           <div className="mb-3 space-y-1">
             <div className="flex items-center justify-between text-xs">
               <span className="text-stone-500">Price Depreciation:</span>
-              <span className="text-stone-500">
-                {resource.currentDepreciatedValue || resource.currentValue} /{" "}
-                {resource.originalValue} DAI
-              </span>
+              <span className="text-stone-500">{depreciationProgress}%</span>
             </div>
-            <Progress value={depreciationProgress} className="h-1.5" />
-            <p className="text-xs text-stone-500">
-              Price decreases by {resource.depreciationRate} DAI/day while
-              unoccupied
-            </p>
+            <Progress value={depreciationProgress} className="h-1" />
           </div>
         )}
 
-        <div className="flex flex-wrap gap-1">
-          {resource.amenities.map((amenity: string) => (
-            <Badge
-              key={amenity}
-              variant="outline"
-              className="text-xs font-normal"
-            >
-              <Tag className="mr-1 h-3 w-3" />
-              {amenity}
-            </Badge>
-          ))}
-        </div>
+        {resource.resource_amenities &&
+          resource.resource_amenities.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {resource.resource_amenities.map((amenity: { name: string }) => (
+                <Badge
+                  key={amenity.name}
+                  variant="outline"
+                  className="bg-stone-50 text-stone-600"
+                >
+                  <Tag className="mr-1 h-3 w-3" />
+                  {amenity.name}
+                </Badge>
+              ))}
+            </div>
+          )}
       </CardContent>
       <CardFooter className="flex items-center justify-between border-t border-stone-100 pt-3">
         {resource.currentOwner ? (
