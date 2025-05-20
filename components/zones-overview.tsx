@@ -206,7 +206,7 @@ export function ZonesOverview({ societyId }: ZonesOverviewProps) {
       <ZoneFormDialog
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
-        zone={selectedZone}
+        zone={selectedZone || undefined}
       />
     </div>
   );
