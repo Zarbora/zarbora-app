@@ -15,38 +15,60 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-stone-800">Dashboard</h1>
-        <p className="text-stone-500">Welcome back, {displayName}</p>
+        <h1 className="text-2xl font-semibold text-stone-800 dark:text-white">
+          Dashboard
+        </h1>
+        <p className="text-stone-500 dark:text-stone-400">
+          Welcome back, {displayName}
+        </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
+        <Card className="bg-white dark:bg-stone-800">
           <CardHeader>
-            <CardTitle>Your Address</CardTitle>
-            <CardDescription>Your connected wallet address</CardDescription>
+            <CardTitle className="text-stone-900 dark:text-white">
+              Your Address
+            </CardTitle>
+            <CardDescription className="text-stone-600 dark:text-stone-400">
+              Your connected wallet address
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="font-mono text-sm">{address}</p>
+            <p className="font-mono text-sm text-stone-700 dark:text-stone-300">
+              {address}
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white dark:bg-stone-800">
           <CardHeader>
-            <CardTitle>Resources</CardTitle>
-            <CardDescription>Your owned resources</CardDescription>
+            <CardTitle className="text-stone-900 dark:text-white">
+              Resources
+            </CardTitle>
+            <CardDescription className="text-stone-600 dark:text-stone-400">
+              Your owned resources
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-semibold">3</p>
+            <p className="text-2xl font-semibold text-stone-900 dark:text-white">
+              3
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white dark:bg-stone-800">
           <CardHeader>
-            <CardTitle>Governance Weight</CardTitle>
-            <CardDescription>Your voting power</CardDescription>
+            <CardTitle className="text-stone-900 dark:text-white">
+              Governance Weight
+            </CardTitle>
+            <CardDescription className="text-stone-600 dark:text-stone-400">
+              Your voting power
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-semibold">120</p>
+            <p className="text-2xl font-semibold text-stone-900 dark:text-white">
+              120
+            </p>
           </CardContent>
         </Card>
       </div>

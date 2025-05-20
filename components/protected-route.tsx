@@ -41,24 +41,26 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   if (!mounted || isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-stone-300 border-t-stone-800"></div>
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-stone-300 dark:border-stone-600 border-t-stone-800 dark:border-t-stone-400"></div>
       </div>
     );
   }
 
   if (!isConnected) {
     return (
-      <Card className="mx-auto max-w-md">
+      <Card className="mx-auto max-w-md bg-white dark:bg-stone-800">
         <CardHeader>
-          <CardTitle>Authentication Required</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-stone-900 dark:text-white">
+            Authentication Required
+          </CardTitle>
+          <CardDescription className="text-stone-600 dark:text-stone-400">
             Please connect your wallet to access this page.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Button
             onClick={() => open({ view: "Connect" })}
-            className="w-full bg-stone-800 text-white hover:bg-stone-700"
+            className="w-full bg-stone-800 dark:bg-stone-700 text-white hover:bg-stone-700 dark:hover:bg-stone-600 transition-colors"
           >
             <Wallet className="mr-2 h-4 w-4" />
             Connect Wallet
