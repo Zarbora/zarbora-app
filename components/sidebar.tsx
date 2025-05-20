@@ -2,11 +2,12 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Building, Home, LayoutDashboard, Vote } from "lucide-react";
+import { Building, Home, LayoutDashboard, Vote, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Societies", href: "/societies", icon: Users },
   { name: "Resources", href: "/resources", icon: Building },
   { name: "City Zones", href: "/zones", icon: Home },
   { name: "Governance", href: "/governance", icon: Vote },
