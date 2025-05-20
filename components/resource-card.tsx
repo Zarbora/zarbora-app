@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Tag } from "lucide-react";
+import { MapPin, Tag, Clock, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +38,55 @@ export function ResourceCard({ resource, onClick }: ResourceCardProps) {
         )
       : 0;
 
+  // Calculate days until release is possible
+  const calculateReleaseStatus = () => {
+    if (!resource.currentOwner) return null;
+
+    const now = new Date();
+    const acquiredDate = new Date(resource.acquiredDate);
+    const minHoldingEndDate = new Date(acquiredDate);
+    minHoldingEndDate.setDate(
+      minHoldingEndDate.getDate() + resource.minHoldingPeriod
+    );
+
+    const daysUntilReleasable = Math.ceil(
+      (minHoldingEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    if (resource.releaseRequested) {
+      const releaseDate = new Date(resource.releaseRequestDate);
+      releaseDate.setDate(releaseDate.getDate() + resource.releaseNotice);
+      const daysUntilRelease = Math.ceil(
+        (releaseDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      return {
+        status: "releasing",
+        days: daysUntilRelease,
+        message: `Release in ${daysUntilRelease} days`,
+      };
+    }
+
+    if (daysUntilReleasable > 0) {
+      return {
+        status: "locked",
+        days: daysUntilReleasable,
+        message: `Can request release in ${daysUntilReleasable} days`,
+      };
+    }
+
+    return {
+      status: "releasable",
+      days: 0,
+      message: resource.releaseNotice
+        ? `Can be released with ${resource.releaseNotice} day${
+            resource.releaseNotice === 1 ? "" : "s"
+          } notice`
+        : "Can be released immediately",
+    };
+  };
+
+  const releaseStatus = resource.currentOwner ? calculateReleaseStatus() : null;
+
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
       <CardHeader className="pb-2">
@@ -60,12 +109,21 @@ export function ResourceCard({ resource, onClick }: ResourceCardProps) {
             <Tooltip>
               <TooltipTrigger asChild>
                 {resource.currentOwner ? (
-                  <Badge
-                    variant="outline"
-                    className="bg-green-50 text-green-700"
-                  >
-                    Occupied
-                  </Badge>
+                  releaseStatus?.status === "releasing" ? (
+                    <Badge
+                      variant="outline"
+                      className="bg-yellow-50 text-yellow-700"
+                    >
+                      Releasing
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="bg-green-50 text-green-700"
+                    >
+                      Occupied
+                    </Badge>
+                  )
                 ) : (
                   <Badge variant="outline" className="bg-blue-50 text-blue-700">
                     Available
@@ -74,7 +132,8 @@ export function ResourceCard({ resource, onClick }: ResourceCardProps) {
               </TooltipTrigger>
               <TooltipContent>
                 {resource.currentOwner
-                  ? `Currently owned by ${
+                  ? releaseStatus?.message ||
+                    `Currently owned by ${
                       resource.ownerName || resource.currentOwner
                     }`
                   : "Available for claiming"}
@@ -102,12 +161,23 @@ export function ResourceCard({ resource, onClick }: ResourceCardProps) {
             <span className="font-medium">{resource.dailyTax} DAI</span>
           </div>
           {resource.currentOwner && (
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-stone-600">Current Owner:</span>
-              <span className="font-medium">
-                {resource.ownerName || resource.currentOwner}
-              </span>
-            </div>
+            <>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-stone-600">Current Owner:</span>
+                <span className="font-medium">
+                  {resource.ownerName || resource.currentOwner}
+                </span>
+              </div>
+              {releaseStatus && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-stone-600">
+                    <Clock className="mr-1 inline-block h-3 w-3" />
+                    Release Status:
+                  </span>
+                  <span className="font-medium">{releaseStatus.message}</span>
+                </div>
+              )}
+            </>
           )}
           {resource.occupancyEnds && (
             <div className="flex items-center justify-between text-sm">

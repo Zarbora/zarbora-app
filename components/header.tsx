@@ -30,14 +30,16 @@ export function Header() {
                 <span className="sr-only">Open sidebar</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[240px] p-0">
+            <SheetContent side="left" className="w-[280px] p-0">
               <SheetHeader className="sr-only">
                 <SheetTitle>Navigation Menu</SheetTitle>
                 <SheetDescription>
                   Access the main navigation menu of Zarbora
                 </SheetDescription>
               </SheetHeader>
-              <Sidebar />
+              <div className="flex h-full flex-col bg-background">
+                <Sidebar className="border-none" />
+              </div>
             </SheetContent>
           </Sheet>
           <h1 className="text-xl font-semibold text-foreground lg:hidden">

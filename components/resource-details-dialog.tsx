@@ -31,6 +31,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { formatDate } from "@/lib/utils";
+import { useAuth } from "@/context/auth-context";
+import { Separator } from "@/components/ui/separator";
 
 interface ResourceDetailsDialogProps {
   resource: any;
@@ -43,6 +45,7 @@ export function ResourceDetailsDialog({
   open,
   onOpenChange,
 }: ResourceDetailsDialogProps) {
+  const { address } = useAuth();
   const [valuation, setValuation] = useState(
     resource.currentOwner
       ? resource.currentValue
@@ -52,10 +55,67 @@ export function ResourceDetailsDialog({
     resource.currentOwner ? "details" : "claim"
   );
   const Icon = resource.icon;
+  const isOwner = resource.currentOwner === address;
+  const [isReleaseRequested, setIsReleaseRequested] = useState(
+    resource.releaseRequested || false
+  );
 
   const taxRate = 0.1; // 10% Harberger tax rate
   const dailyTax = valuation * taxRate;
   const monthlyTax = dailyTax * 30;
+
+  // Calculate release status
+  const calculateReleaseStatus = () => {
+    if (!resource.currentOwner) return null;
+
+    const now = new Date();
+    const acquiredDate = new Date(resource.acquiredDate);
+    const minHoldingEndDate = new Date(acquiredDate);
+    minHoldingEndDate.setDate(
+      minHoldingEndDate.getDate() + resource.minHoldingPeriod
+    );
+
+    const daysUntilReleasable = Math.ceil(
+      (minHoldingEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    if (isReleaseRequested) {
+      const releaseDate = new Date(resource.releaseRequestDate || new Date());
+      releaseDate.setDate(releaseDate.getDate() + resource.releaseNotice);
+      const daysUntilRelease = Math.ceil(
+        (releaseDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      return {
+        status: "releasing",
+        days: daysUntilRelease,
+        message: `Release in ${daysUntilRelease} days`,
+        canRequestRelease: false,
+      };
+    }
+
+    if (daysUntilReleasable > 0) {
+      return {
+        status: "locked",
+        days: daysUntilReleasable,
+        message: `Must hold for ${daysUntilReleasable} more days`,
+        canRequestRelease: false,
+      };
+    }
+
+    return {
+      status: "releasable",
+      days: 0,
+      message: `Can be released with ${resource.releaseNotice} days notice`,
+      canRequestRelease: true,
+    };
+  };
+
+  const releaseStatus = resource.currentOwner ? calculateReleaseStatus() : null;
+
+  const handleRequestRelease = () => {
+    // In a real app, this would call the smart contract
+    setIsReleaseRequested(true);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

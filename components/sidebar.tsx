@@ -71,7 +71,7 @@ export function Sidebar({ className }: { className?: string }) {
       <UISidebar
         className={cn("flex flex-col", className)}
         variant="sidebar"
-        collapsible="icon"
+        collapsible="none"
       >
         <div className="flex min-h-0 flex-1 flex-col bg-background">
           <div className="flex flex-1 flex-col overflow-y-auto pt-5 pb-4">
