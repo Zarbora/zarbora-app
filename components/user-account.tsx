@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { LogOut, Settings, Shield, User, Wallet } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react";
+import { LogOut, Settings, Shield, User, Wallet } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,23 +12,23 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
-import Link from "next/link"
-import { useAuth } from "@/context/auth-context"
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import { useAuth } from "@/context/auth-context";
 
 export function UserAccount() {
-  const [isOpen, setIsOpen] = useState(false)
-  const { isConnected, displayName, address, disconnect } = useAuth()
-  const [mounted, setMounted] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
+  const { isConnected, displayName, address, disconnect } = useAuth();
+  const [mounted, setMounted] = useState(false);
 
   // Only show the component after it has mounted to avoid hydration errors
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
   if (!mounted || !isConnected) {
-    return null
+    return null;
   }
 
   return (
@@ -50,7 +50,9 @@ export function UserAccount() {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{displayName}</p>
-            <p className="text-xs leading-none text-muted-foreground">{address}</p>
+            <p className="text-xs leading-none text-muted-foreground">
+              {address}
+            </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -61,28 +63,6 @@ export function UserAccount() {
               <span>Profile</span>
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/resources">
-              <Badge className="mr-2 h-4 px-1 text-xs" variant="outline">
-                3
-              </Badge>
-              <span>Resources Held</span>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/governance">
-              <Shield className="mr-2 h-4 w-4" />
-              <span>Governance Weight: 120</span>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Wallet className="mr-2 h-4 w-4" />
-            <span>Wallet</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
-          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={disconnect}>
@@ -91,5 +71,5 @@ export function UserAccount() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }
