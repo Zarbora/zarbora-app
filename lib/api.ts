@@ -142,6 +142,19 @@ export interface HarbergerPricing {
   updated_at: string;
 }
 
+export interface DashboardStats {
+  totalResources: number;
+  zoneCount: number;
+  totalMembers: number;
+  totalProposals: number;
+  totalResourceValue: number;
+  totalDailyTax: number;
+  activeProposals: number;
+  availableResources: number;
+  governanceParticipationRate: number;
+  resourceUtilizationRate: number;
+}
+
 export const api = {
   societies: {
     async getAll() {
@@ -854,4 +867,67 @@ export async function updateZone(id: string, updates: Partial<Zone>) {
 
   if (error) throw error;
   return data;
+}
+
+export async function getDashboardStats(
+  societyId: string
+): Promise<DashboardStats> {
+  // Get resources count and values
+  const { data: resources, error: resourcesError } = await supabase
+    .from("resources")
+    .select("current_value, daily_tax, status")
+    .eq("society_id", societyId);
+
+  if (resourcesError) throw resourcesError;
+
+  // Get zones count
+  const { count: zoneCount, error: zonesError } = await supabase
+    .from("zones")
+    .select("*", { count: "exact", head: true })
+    .eq("society_id", societyId);
+
+  if (zonesError) throw zonesError;
+
+  // Get members count
+  const { count: memberCount, error: membersError } = await supabase
+    .from("members")
+    .select("*", { count: "exact", head: true })
+    .eq("society_id", societyId);
+
+  if (membersError) throw membersError;
+
+  // Get proposals data
+  const { data: proposals, error: proposalsError } = await supabase
+    .from("proposals")
+    .select("status")
+    .eq("society_id", societyId);
+
+  if (proposalsError) throw proposalsError;
+
+  // Calculate statistics
+  const totalResources = resources?.length || 0;
+  const totalResourceValue =
+    resources?.reduce((sum, r) => sum + (r.current_value || 0), 0) || 0;
+  const totalDailyTax =
+    resources?.reduce((sum, r) => sum + (r.daily_tax || 0), 0) || 0;
+  const availableResources =
+    resources?.filter((r) => r.status === "available").length || 0;
+  const activeProposals =
+    proposals?.filter((p) => p.status === "active").length || 0;
+  const totalProposals = proposals?.length || 0;
+
+  return {
+    totalResources,
+    zoneCount: zoneCount || 0,
+    totalMembers: memberCount || 0,
+    totalProposals,
+    totalResourceValue,
+    totalDailyTax,
+    activeProposals,
+    availableResources,
+    governanceParticipationRate: 0, // Can be implemented if needed
+    resourceUtilizationRate: totalResources
+      ? ((totalResources - availableResources) / totalResources) * 100
+      : 0,
+  };
 }
