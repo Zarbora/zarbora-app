@@ -2,7 +2,14 @@
 
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { Sidebar } from "@/components/sidebar";
 import { LoginButton } from "@/components/login-button";
 import { UserAccount } from "@/components/user-account";
@@ -24,9 +31,13 @@ export function Header() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[240px] p-0">
-              <div className="flex h-full flex-col">
-                <Sidebar />
-              </div>
+              <SheetHeader className="sr-only">
+                <SheetTitle>Navigation Menu</SheetTitle>
+                <SheetDescription>
+                  Access the main navigation menu of Zarbora
+                </SheetDescription>
+              </SheetHeader>
+              <Sidebar />
             </SheetContent>
           </Sheet>
           <h1 className="text-xl font-semibold text-foreground md:hidden">
