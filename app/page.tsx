@@ -1,3 +1,8 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/auth-context";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResourcesOverview } from "@/components/resources-overview";
 import { ZonesOverview } from "@/components/zones-overview";
@@ -7,16 +12,33 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building, Home, Users, Vote } from "lucide-react";
 import { WelcomeBanner } from "@/components/welcome-banner";
 
-export default function Dashboard() {
+export default function HomePage() {
+  const router = useRouter();
+  const { isConnected, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && isConnected) {
+      router.push("/dashboard");
+    }
+  }, [isConnected, isLoading, router]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-stone-300 border-t-stone-800"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-stone-900">
-          Dashboard
+          Welcome to Zarbora
         </h1>
         <p className="mt-2 text-sm text-stone-600">
-          Welcome to the Zarbora Simulation. Explore resources, zones,
-          governance, and identity.
+          A decentralized simulation using Harberger taxes. Connect your wallet
+          to get started.
         </p>
       </div>
 
