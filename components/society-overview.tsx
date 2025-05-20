@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -23,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Building2, Users, Vote } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/context/auth-context";
 
 interface Society {
   id: string;
@@ -31,9 +33,12 @@ interface Society {
   memberCount: number;
   resourceCount: number;
   governanceWeight: number;
+  members: string[]; // Array of member addresses
 }
 
 export function SocietyOverview() {
+  const router = useRouter();
+  const { address } = useAuth();
   const [societies, setSocieties] = useState<Society[]>([
     {
       id: "1",
@@ -42,6 +47,7 @@ export function SocietyOverview() {
       memberCount: 120,
       resourceCount: 79,
       governanceWeight: 500,
+      members: ["0x123...", "0x456..."], // Example member addresses
     },
   ]);
 
@@ -51,6 +57,8 @@ export function SocietyOverview() {
   });
 
   const handleCreateSociety = () => {
+    if (!address) return;
+
     const society: Society = {
       id: Date.now().toString(),
       name: newSociety.name,
@@ -58,9 +66,38 @@ export function SocietyOverview() {
       memberCount: 1,
       resourceCount: 0,
       governanceWeight: 100,
+      members: [address], // Add creator as first member
     };
     setSocieties([...societies, society]);
     setNewSociety({ name: "", description: "" });
+  };
+
+  const handleJoinSociety = (societyId: string) => {
+    if (!address) return;
+
+    setSocieties(
+      societies.map((society) => {
+        if (society.id === societyId) {
+          return {
+            ...society,
+            members: [...society.members, address],
+            memberCount: society.memberCount + 1,
+          };
+        }
+        return society;
+      })
+    );
+  };
+
+  const handleViewSociety = (societyId: string) => {
+    const society = societies.find((s) => s.id === societyId);
+    if (society && society.members.includes(address || "")) {
+      router.push(`/society/${societyId}`);
+    }
+  };
+
+  const isMember = (society: Society) => {
+    return address && society.members.includes(address);
   };
 
   return (
@@ -165,19 +202,23 @@ export function SocietyOverview() {
                 </div>
               </div>
               <div className="mt-4 flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 border-stone-200 dark:border-stone-700"
-                >
-                  View Details
-                </Button>
-                <Button
-                  size="sm"
-                  className="flex-1 bg-stone-800 text-white hover:bg-stone-700"
-                >
-                  Join Society
-                </Button>
+                {isMember(society) ? (
+                  <Button
+                    onClick={() => handleViewSociety(society.id)}
+                    size="sm"
+                    className="flex-1 bg-stone-800 text-white hover:bg-stone-700"
+                  >
+                    Enter Society
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => handleJoinSociety(society.id)}
+                    size="sm"
+                    className="flex-1 bg-stone-800 text-white hover:bg-stone-700"
+                  >
+                    Join Society
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

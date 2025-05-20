@@ -1,13 +1,27 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Building, Coffee, Home, Laptop, Users, Plus, Edit } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { ZoneDetailsDialog } from "./zone-details-dialog"
-import { ZoneFormDialog } from "./zone-form-dialog"
+import { useState } from "react";
+import {
+  Building,
+  Coffee,
+  Home,
+  Laptop,
+  Users,
+  Plus,
+  Edit,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ZoneDetailsDialog } from "./zone-details-dialog";
+import { ZoneFormDialog } from "./zone-form-dialog";
 
 // Sample data for city zones
 const cityZones = [
@@ -81,28 +95,28 @@ const cityZones = [
     eligibilityRules: ["All Community Members"],
     customHooks: ["Booking Limits", "Shared Usage Rules"],
   },
-]
+];
 
 export function ZonesOverview() {
-  const [selectedZone, setSelectedZone] = useState<any>(null)
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
-  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false)
-  const [zoneToEdit, setZoneToEdit] = useState<any>(null)
+  const [selectedZone, setSelectedZone] = useState<any>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
+  const [zoneToEdit, setZoneToEdit] = useState<any>(null);
 
   const handleZoneClick = (zone: any) => {
-    setSelectedZone(zone)
-    setIsDetailsDialogOpen(true)
-  }
+    setSelectedZone(zone);
+    setIsDetailsDialogOpen(true);
+  };
 
   const handleAddZone = () => {
-    setZoneToEdit(null)
-    setIsFormDialogOpen(true)
-  }
+    setZoneToEdit(null);
+    setIsFormDialogOpen(true);
+  };
 
   const handleEditZone = (zone: any) => {
-    setZoneToEdit(zone)
-    setIsFormDialogOpen(true)
-  }
+    setZoneToEdit(zone);
+    setIsFormDialogOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -111,10 +125,14 @@ export function ZonesOverview() {
           <div>
             <CardTitle>Dynamic City Zones</CardTitle>
             <CardDescription>
-              Each zone has its own Harberger tax rate, eligibility rules, and custom hooks for resource allocation.
+              Each zone has its own Harberger tax rate, eligibility rules, and
+              custom hooks for resource allocation.
             </CardDescription>
           </div>
-          <Button onClick={handleAddZone} className="bg-stone-800 text-white hover:bg-stone-700">
+          <Button
+            onClick={handleAddZone}
+            className="bg-stone-800 text-white hover:bg-stone-700"
+          >
             <Plus className="mr-2 h-4 w-4" />
             Add Zone
           </Button>
@@ -128,12 +146,15 @@ export function ZonesOverview() {
             </div>
             <div className="rounded-md border border-stone-200 bg-stone-50 p-3">
               <p className="text-sm text-stone-600">
-                <strong>Total Resources:</strong> {cityZones.reduce((acc, zone) => acc + zone.resourceCount, 0)}
+                <strong>Total Resources:</strong>{" "}
+                {cityZones.reduce((acc, zone) => acc + zone.resourceCount, 0)}
               </p>
             </div>
             <div className="rounded-md border border-stone-200 bg-stone-50 p-3">
               <p className="text-sm text-stone-600">
-                <strong>Daily Tax Revenue:</strong> {cityZones.reduce((acc, zone) => acc + zone.dailyTaxRevenue, 0)} DAI
+                <strong>Daily Tax Revenue:</strong>{" "}
+                {cityZones.reduce((acc, zone) => acc + zone.dailyTaxRevenue, 0)}{" "}
+                DAI
               </p>
             </div>
           </div>
@@ -150,8 +171,12 @@ export function ZonesOverview() {
                     <zone.icon className="h-5 w-5 text-stone-600" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-medium">{zone.name}</CardTitle>
-                    <CardDescription className="text-xs">{zone.description}</CardDescription>
+                    <CardTitle className="text-lg font-medium">
+                      {zone.name}
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      {zone.description}
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -167,23 +192,33 @@ export function ZonesOverview() {
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-stone-600">Daily Revenue:</span>
-                    <span className="font-medium">{zone.dailyTaxRevenue} DAI</span>
+                    <span className="font-medium">
+                      {zone.dailyTaxRevenue} DAI
+                    </span>
                   </div>
                 </div>
 
                 <div className="mb-3 space-y-1">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-stone-500">Occupancy Rate:</span>
-                    <span className="text-stone-500">{zone.occupancyRate}%</span>
+                    <span className="text-stone-500">
+                      {zone.occupancyRate}%
+                    </span>
                   </div>
                   <Progress value={zone.occupancyRate} className="h-1.5" />
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="text-xs font-medium text-stone-600">Resource Types:</h4>
+                  <h4 className="text-xs font-medium text-stone-600">
+                    Resource Types:
+                  </h4>
                   <div className="flex flex-wrap gap-1">
                     {zone.resourceTypes.map((type) => (
-                      <Badge key={type} variant="outline" className="text-xs font-normal">
+                      <Badge
+                        key={type}
+                        variant="outline"
+                        className="text-xs font-normal"
+                      >
                         {type}
                       </Badge>
                     ))}
@@ -191,7 +226,12 @@ export function ZonesOverview() {
                 </div>
               </CardContent>
               <div className="border-t border-stone-100 p-3">
-                <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => handleZoneClick(zone)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={() => handleZoneClick(zone)}
+                >
                   View Zone Details
                 </Button>
               </div>
@@ -201,8 +241,8 @@ export function ZonesOverview() {
               size="icon"
               className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white"
               onClick={(e) => {
-                e.stopPropagation()
-                handleEditZone(zone)
+                e.stopPropagation();
+                handleEditZone(zone);
               }}
             >
               <Edit className="h-4 w-4" />
@@ -213,10 +253,18 @@ export function ZonesOverview() {
       </div>
 
       {selectedZone && (
-        <ZoneDetailsDialog zone={selectedZone} open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen} />
+        <ZoneDetailsDialog
+          zone={selectedZone}
+          open={isDetailsDialogOpen}
+          onOpenChange={setIsDetailsDialogOpen}
+        />
       )}
 
-      <ZoneFormDialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen} zone={zoneToEdit} />
+      <ZoneFormDialog
+        open={isFormDialogOpen}
+        onOpenChange={setIsFormDialogOpen}
+        zone={zoneToEdit}
+      />
     </div>
-  )
+  );
 }
