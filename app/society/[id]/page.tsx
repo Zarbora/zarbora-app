@@ -108,33 +108,6 @@ export default function SocietyDashboardPage() {
           </CardContent>
         </Card>
       </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>
-              Latest transactions and events in the society
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">No recent activity</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Resource Distribution</CardTitle>
-            <CardDescription>
-              Overview of resource allocation across zones
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Distribution data coming soon
-            </p>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }
