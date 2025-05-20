@@ -4,7 +4,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
-import { AuthProvider } from "@/context/auth-context";
+import AppKitProvider from "@/context/auth-context";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -36,7 +36,7 @@ export default function RootLayout({
           enableSystem={false}
           forcedTheme="light"
         >
-          <AuthProvider>
+          <AppKitProvider>
             <div className="flex h-screen bg-stone-50">
               <Sidebar />
               <div className="flex flex-1 flex-col md:pl-64">
@@ -46,7 +46,7 @@ export default function RootLayout({
                 </main>
               </div>
             </div>
-          </AuthProvider>
+          </AppKitProvider>
         </ThemeProvider>
       </body>
     </html>
