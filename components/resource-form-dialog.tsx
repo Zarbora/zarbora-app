@@ -34,6 +34,25 @@ interface ResourceFormDialogProps {
   onResourceCreated?: () => Promise<void>;
 }
 
+interface FormData {
+  name: string;
+  description: string;
+  type: string;
+  zone_id: string;
+  location: string;
+  current_value: number;
+  daily_tax: number;
+  depreciating: boolean;
+  original_value: number;
+  depreciation_rate: number;
+  amenities: string[];
+  min_holding_period: number;
+  min_holding_period_unit: string;
+  has_min_holding_period: boolean;
+  release_notice: number;
+  release_notice_unit: string;
+}
+
 export function ResourceFormDialog({
   open,
   onOpenChange,
@@ -42,48 +61,82 @@ export function ResourceFormDialog({
   onResourceCreated,
 }: ResourceFormDialogProps) {
   const isEditing = !!resource;
-  const [formData, setFormData] = useState(() => ({
-    name: resource?.name || "",
-    type: resource?.type || "housing",
-    description: resource?.description || "",
-    location: resource?.location || cityZones[0]?.name || "",
-    currentValue: resource?.currentValue || 100,
-    dailyTax: resource?.dailyTax || 10,
-    depreciating: resource?.depreciating || false,
-    originalValue: resource?.originalValue || 120,
-    depreciationRate: resource?.depreciationRate || 5,
-    amenities: resource?.amenities || [],
-    minHoldingPeriod: resource?.minHoldingPeriod || 30,
-    minHoldingPeriodUnit: resource?.minHoldingPeriodUnit || "days",
-    hasMinHoldingPeriod: resource?.hasMinHoldingPeriod || true,
-    releaseNotice: resource?.releaseNotice || 7,
-    releaseNoticeUnit: resource?.releaseNoticeUnit || "days",
-  }));
+
+  // Default empty form data for new resources
+  const defaultFormData: FormData = {
+    name: "",
+    description: "",
+    type: "",
+    zone_id: "",
+    location: "",
+    current_value: 0,
+    daily_tax: 0,
+    depreciating: false,
+    original_value: 0,
+    depreciation_rate: 0,
+    amenities: [],
+    min_holding_period: 0,
+    min_holding_period_unit: "days",
+    has_min_holding_period: false,
+    release_notice: 0,
+    release_notice_unit: "days",
+  };
+
+  const [formData, setFormData] = useState<FormData>(
+    isEditing && resource
+      ? {
+          name: resource.name || "",
+          description: resource.description || "",
+          type: resource.type || "",
+          zone_id: resource.zone_id || "",
+          location: resource.location || "",
+          current_value: resource.current_value || 0,
+          daily_tax: resource.daily_tax || 0,
+          depreciating: resource.depreciating || false,
+          original_value: resource.original_value || 0,
+          depreciation_rate: resource.depreciation_rate || 0,
+          amenities:
+            resource.resource_amenities?.map((a: { name: string }) => a.name) ||
+            [],
+          min_holding_period: resource.min_holding_period || 0,
+          min_holding_period_unit: resource.min_holding_period_unit || "days",
+          has_min_holding_period: resource.has_min_holding_period || false,
+          release_notice: resource.release_notice || 0,
+          release_notice_unit: resource.release_notice_unit || "days",
+        }
+      : defaultFormData
+  );
+
+  // Reset form data when resource prop changes or when switching between edit/new modes
+  useEffect(() => {
+    if (isEditing && resource) {
+      setFormData({
+        name: resource.name || "",
+        description: resource.description || "",
+        type: resource.type || "",
+        zone_id: resource.zone_id || "",
+        location: resource.location || "",
+        current_value: resource.current_value || 0,
+        daily_tax: resource.daily_tax || 0,
+        depreciating: resource.depreciating || false,
+        original_value: resource.original_value || 0,
+        depreciation_rate: resource.depreciation_rate || 0,
+        amenities:
+          resource.resource_amenities?.map((a: { name: string }) => a.name) ||
+          [],
+        min_holding_period: resource.min_holding_period || 0,
+        min_holding_period_unit: resource.min_holding_period_unit || "days",
+        has_min_holding_period: resource.has_min_holding_period || false,
+        release_notice: resource.release_notice || 0,
+        release_notice_unit: resource.release_notice_unit || "days",
+      });
+    } else {
+      setFormData(defaultFormData);
+    }
+  }, [resource, isEditing, cityZones]);
+
   const [newAmenity, setNewAmenity] = useState("");
   const [proposalCreated, setProposalCreated] = useState(false);
-
-  // Reset form data when resource changes
-  useEffect(() => {
-    if (resource) {
-      setFormData({
-        name: resource.name,
-        type: resource.type,
-        description: resource.description,
-        location: resource.location,
-        currentValue: resource.currentValue,
-        dailyTax: resource.dailyTax,
-        depreciating: resource.depreciating,
-        originalValue: resource.originalValue,
-        depreciationRate: resource.depreciationRate,
-        amenities: resource.amenities,
-        minHoldingPeriod: resource.minHoldingPeriod || 30,
-        minHoldingPeriodUnit: resource.minHoldingPeriodUnit || "days",
-        hasMinHoldingPeriod: resource.hasMinHoldingPeriod || true,
-        releaseNotice: resource.releaseNotice || 7,
-        releaseNoticeUnit: resource.releaseNoticeUnit || "days",
-      });
-    }
-  }, [resource]);
 
   const resourceTypes = [
     { value: "housing", label: "Housing", icon: Home },
@@ -109,7 +162,7 @@ export function ResourceFormDialog({
   const removeAmenity = (amenity: string) => {
     setFormData((prev) => ({
       ...prev,
-      amenities: prev.amenities.filter((a: any) => a !== amenity),
+      amenities: prev.amenities.filter((a) => a !== amenity),
     }));
   };
 
@@ -250,19 +303,18 @@ export function ResourceFormDialog({
               <div className="border-b pb-2">
                 <h3 className="font-medium text-lg">Value and Tax</h3>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-4">
-                <Label htmlFor="currentValue" className="sm:text-right sm:pt-2">
-                  Initial Value (DAI)
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="current_value" className="text-right">
+                  Current Value
                 </Label>
                 <Input
-                  id="currentValue"
+                  id="current_value"
                   type="number"
-                  value={formData.currentValue}
+                  value={formData.current_value}
                   onChange={(e) =>
-                    handleChange("currentValue", Number(e.target.value))
+                    handleChange("current_value", parseFloat(e.target.value))
                   }
-                  min={0}
-                  className="sm:col-span-3"
+                  className="col-span-3"
                 />
               </div>
             </div>
@@ -324,11 +376,11 @@ export function ResourceFormDialog({
               <div className="border-b pb-2">
                 <h3 className="font-medium text-lg">Depreciation Settings</h3>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-4">
-                <Label htmlFor="depreciating" className="sm:text-right sm:pt-2">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="depreciating" className="text-right">
                   Enable
                 </Label>
-                <div className="sm:col-span-3">
+                <div className="col-span-3">
                   <Select
                     value={formData.depreciating ? "yes" : "no"}
                     onValueChange={(value) =>
@@ -350,41 +402,39 @@ export function ResourceFormDialog({
 
               {formData.depreciating && (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-4">
-                    <Label
-                      htmlFor="originalValue"
-                      className="sm:text-right sm:pt-2"
-                    >
-                      Original Value (DAI)
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="original_value" className="text-right">
+                      Original Value
                     </Label>
                     <Input
-                      id="originalValue"
+                      id="original_value"
                       type="number"
-                      value={formData.originalValue}
+                      value={formData.original_value}
                       onChange={(e) =>
-                        handleChange("originalValue", Number(e.target.value))
+                        handleChange(
+                          "original_value",
+                          parseFloat(e.target.value)
+                        )
                       }
-                      min={0}
-                      className="sm:col-span-3"
+                      className="col-span-3"
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-4">
-                    <Label
-                      htmlFor="depreciationRate"
-                      className="sm:text-right sm:pt-2"
-                    >
-                      Daily Depreciation (DAI)
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="depreciation_rate" className="text-right">
+                      Depreciation Rate
                     </Label>
                     <Input
-                      id="depreciationRate"
+                      id="depreciation_rate"
                       type="number"
-                      value={formData.depreciationRate}
+                      value={formData.depreciation_rate}
                       onChange={(e) =>
-                        handleChange("depreciationRate", Number(e.target.value))
+                        handleChange(
+                          "depreciation_rate",
+                          parseFloat(e.target.value)
+                        )
                       }
-                      min={0}
-                      className="sm:col-span-3"
+                      className="col-span-3"
                     />
                   </div>
                 </>
@@ -396,97 +446,85 @@ export function ResourceFormDialog({
               <div className="border-b pb-2">
                 <h3 className="font-medium text-lg">Release Constraints</h3>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-4">
-                <Label className="sm:text-right sm:pt-2">
-                  Minimum Holding Period
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="has_min_holding_period" className="text-right">
+                  Enable Minimum Holding Period
                 </Label>
-                <div className="sm:col-span-3 space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={formData.hasMinHoldingPeriod}
-                      onCheckedChange={(checked) =>
-                        handleChange("hasMinHoldingPeriod", checked)
-                      }
-                    />
-                    <Label>Require minimum holding period</Label>
-                  </div>
-                  {formData.hasMinHoldingPeriod && (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        value={formData.minHoldingPeriod}
-                        onChange={(e) =>
-                          handleChange(
-                            "minHoldingPeriod",
-                            Number(e.target.value)
-                          )
-                        }
-                        min={1}
-                        className="w-24"
-                      />
-                      <Select
-                        value={formData.minHoldingPeriodUnit}
-                        onValueChange={(value) =>
-                          handleChange("minHoldingPeriodUnit", value)
-                        }
-                      >
-                        <SelectTrigger className="w-[110px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="minutes">Minutes</SelectItem>
-                          <SelectItem value="hours">Hours</SelectItem>
-                          <SelectItem value="days">Days</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <div className="text-sm text-muted-foreground">
-                        minimum holding time
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <Switch
+                  id="has_min_holding_period"
+                  checked={formData.has_min_holding_period}
+                  onCheckedChange={(checked) =>
+                    handleChange("has_min_holding_period", checked)
+                  }
+                />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-4">
-                <Label
-                  htmlFor="releaseNotice"
-                  className="sm:text-right sm:pt-2"
-                >
-                  Release Notice
-                </Label>
-                <div className="sm:col-span-3 flex items-center gap-2">
-                  <Input
-                    id="releaseNotice"
-                    type="number"
-                    value={formData.releaseNotice}
-                    onChange={(e) => {
-                      const value = Number(e.target.value);
-                      if (value >= 1) {
-                        handleChange("releaseNotice", value);
+              {formData.has_min_holding_period && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="min_holding_period" className="text-right">
+                    Minimum Holding Period
+                  </Label>
+                  <div className="col-span-3 flex gap-2">
+                    <Input
+                      id="min_holding_period"
+                      type="number"
+                      value={formData.min_holding_period}
+                      onChange={(e) =>
+                        handleChange(
+                          "min_holding_period",
+                          parseInt(e.target.value)
+                        )
                       }
-                    }}
-                    min={1}
-                    required
-                    className="w-24"
+                      className="flex-1"
+                    />
+                    <Select
+                      value={formData.min_holding_period_unit}
+                      onValueChange={(value) =>
+                        handleChange("min_holding_period_unit", value)
+                      }
+                    >
+                      <SelectTrigger className="w-[100px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="days">Days</SelectItem>
+                        <SelectItem value="weeks">Weeks</SelectItem>
+                        <SelectItem value="months">Months</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="release_notice" className="text-right">
+                  Release Notice Period
+                </Label>
+                <div className="col-span-3 flex gap-2">
+                  <Input
+                    id="release_notice"
+                    type="number"
+                    value={formData.release_notice}
+                    onChange={(e) =>
+                      handleChange("release_notice", parseInt(e.target.value))
+                    }
+                    className="flex-1"
                   />
                   <Select
-                    value={formData.releaseNoticeUnit}
+                    value={formData.release_notice_unit}
                     onValueChange={(value) =>
-                      handleChange("releaseNoticeUnit", value)
+                      handleChange("release_notice_unit", value)
                     }
                   >
-                    <SelectTrigger className="w-[110px]">
+                    <SelectTrigger className="w-[100px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="minutes">Minutes</SelectItem>
-                      <SelectItem value="hours">Hours</SelectItem>
                       <SelectItem value="days">Days</SelectItem>
+                      <SelectItem value="weeks">Weeks</SelectItem>
+                      <SelectItem value="months">Months</SelectItem>
                     </SelectContent>
                   </Select>
-                  <div className="text-sm text-muted-foreground">
-                    notice required before release
-                  </div>
                 </div>
               </div>
             </div>
