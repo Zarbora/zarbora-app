@@ -16,36 +16,14 @@ import { useAuth } from "@/context/auth-context";
 import { useEffect, useState } from "react";
 import { Sidebar as UISidebar, SidebarProvider } from "@/components/ui/sidebar";
 
-interface Society {
-  id: string;
-  name: string;
-  description: string;
-  memberCount: number;
-  resourceCount: number;
-  governanceWeight: number;
-}
-
 export function Sidebar({ className }: { className?: string }) {
   const pathname = usePathname();
   const params = useParams();
-  const { address } = useAuth();
-  const [society, setSociety] = useState<Society | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    // In a real app, fetch society data here
-    if (params.id) {
-      setSociety({
-        id: params.id as string,
-        name: "Zarbora Metropolis",
-        description: "A decentralized city simulation with Harberger taxes",
-        memberCount: 120,
-        resourceCount: 79,
-        governanceWeight: 500,
-      });
-    }
-  }, [params.id]);
+  }, []);
 
   // If we're not mounted yet, don't render anything
   if (!mounted) {
@@ -71,7 +49,6 @@ export function Sidebar({ className }: { className?: string }) {
           href: `/society/${params.id}/governance`,
           icon: Vote,
         },
-        // { name: "Members", href: `/society/${params.id}/members`, icon: Users },
         {
           name: "Speakers",
           href: `/society/${params.id}/speakers`,
@@ -92,14 +69,12 @@ export function Sidebar({ className }: { className?: string }) {
         <div className="flex min-h-0 flex-1 flex-col bg-background">
           <div className="flex flex-1 flex-col overflow-y-auto pt-5 pb-4">
             <div className="flex flex-shrink-0 items-center px-4">
-              <h1 className="text-xl font-bold text-foreground">
-                {society?.name || "Zarbora"}
-              </h1>
+              <h1 className="text-xl font-bold text-foreground">Zarbora</h1>
             </div>
-            {society && (
+            {params.id && (
               <div className="mt-2 px-4">
                 <p className="text-sm text-muted-foreground">
-                  {society.description}
+                  A decentralized city simulation with Harberger taxes
                 </p>
               </div>
             )}
