@@ -32,12 +32,12 @@ export default function RootLayout({
       <body className={`${inter.variable} ${playfair.variable} font-sans`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
-          forcedTheme="light"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
         >
           <AppKitProvider>
-            <div className="flex h-screen bg-stone-50">
+            <div className="flex h-screen bg-background">
               <Sidebar />
               <div className="flex flex-1 flex-col md:pl-64">
                 <Header />
