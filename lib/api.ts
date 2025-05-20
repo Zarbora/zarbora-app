@@ -584,6 +584,135 @@ export const api = {
       return data;
     },
   },
+
+  governance: {
+    async getProposals(societyId: string) {
+      if (!societyId) {
+        throw new Error("societyId is required");
+      }
+
+      const { data, error } = await supabase
+        .from("proposals")
+        .select("*")
+        .eq("society_id", societyId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching proposals:", error);
+        handleSupabaseError(error);
+      }
+      return data;
+    },
+
+    async getProposalById(proposalId: string) {
+      if (!proposalId) {
+        throw new Error("proposalId is required");
+      }
+
+      const { data, error } = await supabase
+        .from("proposals")
+        .select(
+          `
+          *,
+          votes (*)
+        `
+        )
+        .eq("id", proposalId)
+        .single();
+
+      if (error) {
+        console.error("Error fetching proposal:", error);
+        handleSupabaseError(error);
+      }
+      return data;
+    },
+
+    async createProposal(proposal: Tables["proposals"]["Insert"]) {
+      const { data, error } = await supabase
+        .from("proposals")
+        .insert(proposal)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error creating proposal:", error);
+        handleSupabaseError(error);
+      }
+      return data;
+    },
+
+    async vote(vote: Tables["votes"]["Insert"]) {
+      const { data, error } = await supabase
+        .from("votes")
+        .insert(vote)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error casting vote:", error);
+        handleSupabaseError(error);
+      }
+      return data;
+    },
+
+    async getVotesByProposal(proposalId: string) {
+      if (!proposalId) {
+        throw new Error("proposalId is required");
+      }
+
+      const { data, error } = await supabase
+        .from("votes")
+        .select("*")
+        .eq("proposal_id", proposalId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching votes:", error);
+        handleSupabaseError(error);
+      }
+      return data;
+    },
+
+    async getSettings(societyId: string) {
+      if (!societyId) {
+        throw new Error("societyId is required");
+      }
+
+      const { data, error } = await supabase
+        .from("governance_settings")
+        .select("*")
+        .eq("society_id", societyId)
+        .single();
+
+      if (error) {
+        console.error("Error fetching governance settings:", error);
+        handleSupabaseError(error);
+      }
+      return data;
+    },
+
+    async updateSettings(
+      societyId: string,
+      updates: Tables["governance_settings"]["Update"]
+    ) {
+      if (!societyId) {
+        throw new Error("societyId is required");
+      }
+
+      const { data, error } = await supabase
+        .from("governance_settings")
+        .update(updates)
+        .eq("society_id", societyId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error updating governance settings:", error);
+        handleSupabaseError(error);
+      }
+      return data;
+    },
+  },
 };
 
 // API Functions

@@ -2,6 +2,9 @@ export type TimeUnit = "minutes" | "hours" | "days";
 export type ResourceType = "housing" | "workspace" | "vehicle" | "utility";
 export type ReleaseStatus = "available" | "occupied" | "releasing";
 export type AttestationType = "skill" | "contribution" | "governance";
+export type ProposalStatus = "active" | "completed";
+export type ProposalResult = "passed" | "rejected";
+export type ProposalCategory = "resource" | "zone" | "governance" | "treasury";
 
 export interface Database {
   public: {
@@ -472,6 +475,123 @@ export interface Database {
           max_price?: number;
           tax_rate?: number;
           retention_days?: number;
+          updated_at?: string;
+        };
+      };
+      proposals: {
+        Row: {
+          id: string;
+          society_id: string;
+          title: string;
+          description: string;
+          details: string;
+          status: ProposalStatus;
+          proposer: string;
+          proposer_name: string;
+          proposer_weight: number;
+          votes_for: number;
+          votes_against: number;
+          total_votes: number;
+          start_time: string;
+          end_time: string;
+          category: ProposalCategory;
+          affected_zone: string | null;
+          result: ProposalResult | null;
+          implementation_time: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          society_id: string;
+          title: string;
+          description: string;
+          details: string;
+          status?: ProposalStatus;
+          proposer: string;
+          proposer_name: string;
+          proposer_weight: number;
+          votes_for?: number;
+          votes_against?: number;
+          total_votes?: number;
+          start_time?: string;
+          end_time: string;
+          category: ProposalCategory;
+          affected_zone?: string | null;
+          result?: ProposalResult | null;
+          implementation_time?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          society_id?: string;
+          title?: string;
+          description?: string;
+          details?: string;
+          status?: ProposalStatus;
+          votes_for?: number;
+          votes_against?: number;
+          total_votes?: number;
+          end_time?: string;
+          result?: ProposalResult | null;
+          implementation_time?: string | null;
+          updated_at?: string;
+        };
+      };
+      votes: {
+        Row: {
+          id: string;
+          proposal_id: string;
+          voter: string;
+          voter_name: string;
+          weight: number;
+          direction: "for" | "against";
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          proposal_id: string;
+          voter: string;
+          voter_name: string;
+          weight: number;
+          direction: "for" | "against";
+          created_at?: string;
+        };
+        Update: {
+          proposal_id?: string;
+          voter?: string;
+          voter_name?: string;
+          weight?: number;
+          direction?: "for" | "against";
+        };
+      };
+      governance_settings: {
+        Row: {
+          id: string;
+          society_id: string;
+          voting_period_days: number;
+          quorum_percentage: number;
+          approval_threshold_percentage: number;
+          min_proposal_weight: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          society_id: string;
+          voting_period_days: number;
+          quorum_percentage: number;
+          approval_threshold_percentage: number;
+          min_proposal_weight: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          society_id?: string;
+          voting_period_days?: number;
+          quorum_percentage?: number;
+          approval_threshold_percentage?: number;
+          min_proposal_weight?: number;
           updated_at?: string;
         };
       };
