@@ -1,116 +1,105 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Building, Home, Users, Vote } from "lucide-react";
-import { ResourcesOverview } from "@/components/resources-overview";
 
-interface Society {
-  id: string;
-  name: string;
-  description: string;
-  memberCount: number;
-  resourceCount: number;
-  governanceWeight: number;
-}
-
-export default function SocietyDashboard() {
-  const params = useParams();
-  const [society, setSociety] = useState<Society | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    // In a real app, fetch society data here
-    setSociety({
-      id: params.id as string,
-      name: "Zarbora Metropolis",
-      description: "A decentralized city simulation with Harberger taxes",
-      memberCount: 120,
-      resourceCount: 79,
-      governanceWeight: 500,
-    });
-  }, [params.id]);
-
-  if (!mounted || !society) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-stone-300 dark:border-stone-600 border-t-stone-800 dark:border-t-stone-400"></div>
-      </div>
-    );
-  }
-
+export default function SocietyDashboardPage() {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-white dark:bg-stone-800">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Society Dashboard</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Overview of society metrics and activities
+        </p>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-stone-900 dark:text-white">
+            <CardTitle className="text-sm font-medium">
               Total Resources
             </CardTitle>
-            <Building className="h-4 w-4 text-stone-600 dark:text-stone-400" />
+            <Building className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-stone-900 dark:text-white">
-              {society.resourceCount}
-            </div>
-            <p className="text-xs text-stone-600 dark:text-stone-400">
-              Across all zones
-            </p>
+            <div className="text-2xl font-bold">79</div>
+            <p className="text-xs text-muted-foreground">Across all zones</p>
           </CardContent>
         </Card>
-        <Card className="bg-white dark:bg-stone-800">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-stone-900 dark:text-white">
-              City Zones
-            </CardTitle>
-            <Home className="h-4 w-4 text-stone-600 dark:text-stone-400" />
+            <CardTitle className="text-sm font-medium">City Zones</CardTitle>
+            <Home className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-stone-900 dark:text-white">
-              5
-            </div>
-            <p className="text-xs text-stone-600 dark:text-stone-400">
+            <div className="text-2xl font-bold">5</div>
+            <p className="text-xs text-muted-foreground">
               With unique tax rates
             </p>
           </CardContent>
         </Card>
-        <Card className="bg-white dark:bg-stone-800">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-stone-900 dark:text-white">
+            <CardTitle className="text-sm font-medium">
               Active Citizens
             </CardTitle>
-            <Users className="h-4 w-4 text-stone-600 dark:text-stone-400" />
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-stone-900 dark:text-white">
-              {society.memberCount}
-            </div>
-            <p className="text-xs text-stone-600 dark:text-stone-400">
+            <div className="text-2xl font-bold">42</div>
+            <p className="text-xs text-muted-foreground">
               With governance weight
             </p>
           </CardContent>
         </Card>
-        <Card className="bg-white dark:bg-stone-800">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-stone-900 dark:text-white">
+            <CardTitle className="text-sm font-medium">
               Active Proposals
             </CardTitle>
-            <Vote className="h-4 w-4 text-stone-600 dark:text-stone-400" />
+            <Vote className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-stone-900 dark:text-white">
-              3
-            </div>
-            <p className="text-xs text-stone-600 dark:text-stone-400">
+            <div className="text-2xl font-bold">3</div>
+            <p className="text-xs text-muted-foreground">
               Awaiting community votes
             </p>
           </CardContent>
         </Card>
       </div>
 
-      <ResourcesOverview />
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+            <CardDescription>
+              Latest transactions and events in the society
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">No recent activity</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Resource Distribution</CardTitle>
+            <CardDescription>
+              Overview of resource allocation across zones
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Distribution data coming soon
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

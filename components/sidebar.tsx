@@ -10,6 +10,7 @@ import {
   Users,
   Building2,
   Mic2,
+  UserCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/auth-context";
@@ -30,7 +31,11 @@ export function Sidebar({ className }: { className?: string }) {
     return null;
   }
 
-  const mainNavigation = [{ name: "Societies", href: "/", icon: Building2 }];
+  const mainNavigation = [
+    { name: "Societies", href: "/", icon: Building2 },
+    { name: "Identity", href: "/identity", icon: UserCircle },
+  ];
+
   const societyNavigation = params.id
     ? [
         {
@@ -57,7 +62,9 @@ export function Sidebar({ className }: { className?: string }) {
       ]
     : [];
 
-  const navigation = params.id ? societyNavigation : mainNavigation;
+  const navigation = params.id
+    ? [...societyNavigation, ...mainNavigation]
+    : mainNavigation;
 
   return (
     <SidebarProvider defaultOpen={true}>
