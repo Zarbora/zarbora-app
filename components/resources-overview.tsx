@@ -43,6 +43,7 @@ interface ResourcesOverviewProps {
 }
 
 export function ResourcesOverview({ societyId }: ResourcesOverviewProps) {
+  console.log("ResourcesOverview societyId:", societyId);
   const [resources, setResources] = useState<Resource[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -79,6 +80,12 @@ export function ResourcesOverview({ societyId }: ResourcesOverviewProps) {
     } catch (error) {
       console.error("Failed to load data:", error);
       setError(error instanceof Error ? error.message : "Failed to load data");
+      if (error && typeof error === "object") {
+        const errObj = error as Record<string, unknown>;
+        for (const key in errObj) {
+          console.log("Error detail:", key, errObj[key]);
+        }
+      }
     } finally {
       setIsLoading(false);
     }
