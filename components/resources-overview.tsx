@@ -44,6 +44,7 @@ interface ResourcesOverviewProps {
 
 export function ResourcesOverview({ societyId }: ResourcesOverviewProps) {
   console.log("ResourcesOverview societyId:", societyId);
+
   const [resources, setResources] = useState<Resource[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
   const [isLoading, setIsLoading] = useState(true);

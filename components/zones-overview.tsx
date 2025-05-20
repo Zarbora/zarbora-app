@@ -22,11 +22,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ZoneDetailsDialog } from "./zone-details-dialog";
 import { ZoneFormDialog } from "./zone-form-dialog";
-import { getZones } from "@/lib/api";
+import { api } from "@/lib/api";
 import type { Zone } from "@/lib/api";
 
 interface ZonesOverviewProps {
   societyId: string;
+}
+
+// Add type for the API response
+interface ZoneWithTypes extends Zone {
+  zone_resource_types: Array<{ resource_type: string }>;
 }
 
 const iconMap = {
@@ -38,29 +43,34 @@ const iconMap = {
 };
 
 export function ZonesOverview({ societyId }: ZonesOverviewProps) {
-  const [zones, setZones] = useState<Zone[]>([]);
+  console.log("ZonesOverview societyId:", societyId);
+  const [zones, setZones] = useState<ZoneWithTypes[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedZone, setSelectedZone] = useState<Zone | null>(null);
+  const [selectedZone, setSelectedZone] = useState<ZoneWithTypes | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   useEffect(() => {
     async function loadZones() {
       try {
-        const data = await getZones(societyId);
-        setZones(data);
+        const data = await api.zones.getBySociety(societyId);
+        console.log("Zones data:", data);
+        setZones(data || []);
       } catch (err) {
+        console.error("Failed to load zones:", err);
         setError(err instanceof Error ? err.message : "Failed to load zones");
       } finally {
         setLoading(false);
       }
     }
 
-    loadZones();
+    if (societyId) {
+      loadZones();
+    }
   }, [societyId]);
 
-  const handleZoneClick = (zone: Zone) => {
+  const handleZoneClick = (zone: ZoneWithTypes) => {
     setSelectedZone(zone);
     setIsDetailsOpen(true);
   };
@@ -70,17 +80,28 @@ export function ZonesOverview({ societyId }: ZonesOverviewProps) {
     setIsFormOpen(true);
   };
 
-  const handleEditZone = (zone: Zone) => {
+  const handleEditZone = (zone: ZoneWithTypes) => {
     setSelectedZone(zone);
     setIsFormOpen(true);
   };
 
   if (loading) {
-    return <div>Loading zones...</div>;
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-stone-800 mx-auto mb-4" />
+          <p>Loading zones...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return (
+      <div className="text-center text-red-600">
+        <p>Error: {error}</p>
+      </div>
+    );
   }
 
   if (zones.length === 0) {
@@ -105,6 +126,9 @@ export function ZonesOverview({ societyId }: ZonesOverviewProps) {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {zones.map((zone) => {
           const Icon = iconMap[zone.icon as keyof typeof iconMap] || Building;
+          const resourceTypes =
+            zone.zone_resource_types?.map((t) => t.resource_type) || [];
+
           return (
             <Card
               key={zone.id}
@@ -153,14 +177,14 @@ export function ZonesOverview({ societyId }: ZonesOverviewProps) {
                     <Progress value={zone.occupancy_rate} className="h-2" />
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    {zone.resource_types.slice(0, 3).map((type) => (
+                    {resourceTypes.slice(0, 3).map((type) => (
                       <Badge key={type} variant="outline">
                         {type}
                       </Badge>
                     ))}
-                    {zone.resource_types.length > 3 && (
+                    {resourceTypes.length > 3 && (
                       <Badge variant="outline">
-                        +{zone.resource_types.length - 3} more
+                        +{resourceTypes.length - 3} more
                       </Badge>
                     )}
                   </div>
