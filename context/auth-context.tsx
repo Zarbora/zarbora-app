@@ -8,7 +8,7 @@ import React, {
   useState,
 } from "react";
 import { config, projectId, metadata } from "@/config";
-import { createWeb3Modal } from "@web3modal/wagmi/react";
+import { createWeb3Modal, useWeb3Modal } from "@web3modal/wagmi/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { State, WagmiProvider, useAccount, useDisconnect } from "wagmi";
 
@@ -48,6 +48,7 @@ export const useAuth = () => useContext(AuthContext);
 function AuthProvider({ children }: { children: ReactNode }) {
   const { address, isConnected } = useAccount();
   const { disconnect: wagmiDisconnect } = useDisconnect();
+  const { open } = useWeb3Modal();
   const [displayName, setDisplayName] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -63,7 +64,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
   }, [address]);
 
   const openConnectModal = () => {
-    // The modal will be opened automatically by Web3Modal
+    open({ view: "Connect" });
   };
 
   const disconnect = async () => {
