@@ -24,6 +24,7 @@ import { ZoneDetailsDialog } from "./zone-details-dialog";
 import { ZoneFormDialog } from "./zone-form-dialog";
 import { api } from "@/lib/api";
 import type { Zone } from "@/lib/api";
+import { DepositButton } from "./deposit-button";
 
 interface ZonesOverviewProps {
   societyId: string;
@@ -117,10 +118,13 @@ export function ZonesOverview({ societyId }: ZonesOverviewProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-medium text-stone-800">City Zones</h2>
-        <Button onClick={handleNewZone} className="flex items-center gap-1">
-          <Plus className="h-4 w-4" />
-          <span>New Zone</span>
-        </Button>
+        <div className="flex gap-2">
+          <DepositButton variant="outline" />
+          <Button onClick={handleNewZone} className="flex items-center gap-1">
+            <Plus className="h-4 w-4" />
+            <span>New Zone</span>
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

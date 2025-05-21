@@ -13,7 +13,7 @@ import { Building, Home, Users, Vote } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Society, DashboardStats } from "@/lib/api";
 import { getDashboardStats } from "@/lib/api";
-
+import { CityDashboard } from "@/components/city-dashboard";
 export default function SocietyDashboardPage() {
   const params = useParams();
   const societyId = params.id as string;
@@ -112,6 +112,7 @@ export default function SocietyDashboardPage() {
           </CardContent>
         </Card>
       </div>
+      <CityDashboard />
     </div>
   );
 }

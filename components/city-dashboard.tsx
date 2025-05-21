@@ -16,21 +16,15 @@ export function CityDashboard() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
-        <h1 className="text-3xl font-medium text-stone-800">
-          Harberger Governance Framework
-        </h1>
-        <p className="text-stone-600">
-          A dynamic resource allocation system for decentralized cities based on
-          Harberger taxes.
-        </p>
+        <h1 className="text-3xl font-medium text-stone-800">City Dashboard</h1>
+        <p className="text-stone-600"></p>
       </div>
 
       <Tabs defaultValue="resources" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="resources">Resources</TabsTrigger>
           <TabsTrigger value="zones">City Zones</TabsTrigger>
           <TabsTrigger value="governance">Governance</TabsTrigger>
-          <TabsTrigger value="identity">Identity</TabsTrigger>
         </TabsList>
         <TabsContent value="resources">
           <ResourcesOverview societyId={societyId} />
@@ -40,9 +34,6 @@ export function CityDashboard() {
         </TabsContent>
         <TabsContent value="governance">
           <GovernanceOverview societyId={societyId} />
-        </TabsContent>
-        <TabsContent value="identity">
-          <IdentityOverview societyId={societyId} />
         </TabsContent>
       </Tabs>
     </div>

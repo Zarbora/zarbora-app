@@ -34,6 +34,7 @@ import { ResourceFormDialog } from "./resource-form-dialog";
 import { Button } from "@/components/ui/button";
 import type { Database } from "@/types/supabase";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { DepositButton } from "./deposit-button";
 
 type Resource = Database["public"]["Tables"]["resources"]["Row"];
 type Zone = Database["public"]["Tables"]["zones"]["Row"];
@@ -144,13 +145,16 @@ export function ResourcesOverview({ societyId }: ResourcesOverviewProps) {
               pay the tax, and use the resource until someone buys it from you.
             </CardDescription>
           </div>
-          <Button
-            onClick={handleAddResource}
-            className="bg-stone-800 text-white hover:bg-stone-700"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Resource
-          </Button>
+          <div className="flex gap-2">
+            <DepositButton variant="outline" />
+            <Button
+              onClick={handleAddResource}
+              className="bg-stone-800 text-white hover:bg-stone-700"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Resource
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {error ? (
