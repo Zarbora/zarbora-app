@@ -15,11 +15,6 @@ export function CityDashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-medium text-stone-800">City Dashboard</h1>
-        <p className="text-stone-600"></p>
-      </div>
-
       <Tabs defaultValue="resources" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="resources">Resources</TabsTrigger>

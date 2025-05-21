@@ -44,17 +44,6 @@ export function Sidebar({ className }: { className?: string }) {
           icon: LayoutDashboard,
         },
         {
-          name: "Resources",
-          href: `/society/${params.id}/resources`,
-          icon: Building,
-        },
-        { name: "City Zones", href: `/society/${params.id}/zones`, icon: Home },
-        {
-          name: "Governance",
-          href: `/society/${params.id}/governance`,
-          icon: Vote,
-        },
-        {
           name: "Speakers",
           href: `/society/${params.id}/speakers`,
           icon: Mic2,
