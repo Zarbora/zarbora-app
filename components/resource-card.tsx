@@ -108,20 +108,20 @@ export function ResourceCard({ resource, onClick }: ResourceCardProps) {
   const releaseStatus = resource.currentOwner ? calculateReleaseStatus() : null;
 
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-md">
-      <CardHeader className="pb-2">
+    <Card className="flex h-[300px] flex-col overflow-hidden transition-all hover:shadow-md">
+      <CardHeader className="pb-1">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-2">
-            <div className="rounded-full bg-stone-100 p-2">
-              <Icon className="h-5 w-5 text-stone-600" />
+            <div className="rounded-full bg-stone-100 p-1.5">
+              <Icon className="h-4 w-4 text-stone-600" />
             </div>
             <div>
-              <CardTitle className="text-lg font-medium">
+              <CardTitle className="text-base font-medium line-clamp-1">
                 {resource.name}
               </CardTitle>
               <CardDescription className="flex items-center text-xs text-stone-500">
                 <MapPin className="mr-1 h-3 w-3" />
-                {resource.location}
+                <span className="line-clamp-1">{resource.location}</span>
               </CardDescription>
             </div>
           </div>
@@ -132,20 +132,23 @@ export function ResourceCard({ resource, onClick }: ResourceCardProps) {
                   releaseStatus?.status === "releasing" ? (
                     <Badge
                       variant="outline"
-                      className="bg-yellow-50 text-yellow-700"
+                      className="bg-yellow-50 text-yellow-700 text-xs"
                     >
                       Releasing
                     </Badge>
                   ) : (
                     <Badge
                       variant="outline"
-                      className="bg-green-50 text-green-700"
+                      className="bg-green-50 text-green-700 text-xs"
                     >
                       Occupied
                     </Badge>
                   )
                 ) : (
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                  <Badge
+                    variant="outline"
+                    className="bg-blue-50 text-blue-700 text-xs"
+                  >
                     Available
                   </Badge>
                 )}
@@ -162,10 +165,12 @@ export function ResourceCard({ resource, onClick }: ResourceCardProps) {
           </TooltipProvider>
         </div>
       </CardHeader>
-      <CardContent className="pb-2">
-        <p className="mb-3 text-sm text-stone-600">{resource.description}</p>
+      <CardContent className="flex-1 overflow-y-auto py-2">
+        <p className="mb-2 text-sm text-stone-600 line-clamp-2">
+          {resource.description}
+        </p>
 
-        <div className="mb-3 space-y-2">
+        <div className="mb-2 space-y-1.5">
           <div className="flex items-center justify-between text-sm">
             <span className="text-stone-600">Current Value:</span>
             <span className="font-medium">
@@ -184,7 +189,7 @@ export function ResourceCard({ resource, onClick }: ResourceCardProps) {
             <>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-stone-600">Current Owner:</span>
-                <span className="font-medium">
+                <span className="font-medium line-clamp-1">
                   {resource.ownerName || resource.currentOwner}
                 </span>
               </div>
@@ -215,7 +220,7 @@ export function ResourceCard({ resource, onClick }: ResourceCardProps) {
         </div>
 
         {resource.depreciating && !resource.currentOwner && (
-          <div className="mb-3 space-y-1">
+          <div className="mb-2 space-y-1">
             <div className="flex items-center justify-between text-xs">
               <span className="text-stone-500">Price Depreciation:</span>
               <span className="text-stone-500">{depreciationProgress}%</span>
@@ -231,16 +236,16 @@ export function ResourceCard({ resource, onClick }: ResourceCardProps) {
                 <Badge
                   key={amenity.name}
                   variant="outline"
-                  className="bg-stone-50 text-stone-600"
+                  className="bg-stone-50 text-stone-600 text-xs"
                 >
-                  <Tag className="mr-1 h-3 w-3" />
+                  <Tag className="mr-1 h-2.5 w-2.5" />
                   {amenity.name}
                 </Badge>
               ))}
             </div>
           )}
       </CardContent>
-      <CardFooter className="flex items-center justify-between border-t border-stone-100 pt-3">
+      <CardFooter className="mt-auto border-t border-stone-100 pt-2">
         {resource.currentOwner ? (
           <Button
             variant="outline"
