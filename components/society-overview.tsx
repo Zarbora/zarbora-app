@@ -41,8 +41,11 @@ export function SocietyOverview() {
   const [newSociety, setNewSociety] = useState({
     name: "",
     description: "",
+    creatorName: "",
   });
   const [selectedSociety, setSelectedSociety] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -94,17 +97,42 @@ export function SocietyOverview() {
   const handleCreateSociety = async () => {
     if (!address) return;
 
+    setIsCreating(true);
+    setError(null);
+
     try {
+      // First create the society
       const society = await api.societies.create({
         name: newSociety.name,
         description: newSociety.description || null,
         governance_address: address,
         treasury_address: null,
       });
+
+      // Then add the creator as a member
+      await api.members.create({
+        society_id: society.id,
+        address: address.toLowerCase(),
+        name: newSociety.creatorName,
+      });
+
+      // Update states
       setSocieties([...societies, society]);
-      setNewSociety({ name: "", description: "" });
+      setNewSociety({ name: "", description: "", creatorName: "" });
+      setMembershipStatus((prev) => ({
+        ...prev,
+        [society.id]: "member",
+      }));
+
+      // Close the dialog
+      setDialogOpen(false);
+
+      // Navigate to the new society
+      router.push(`/society/${society.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create society");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -146,7 +174,7 @@ export function SocietyOverview() {
             Create and manage decentralized societies
           </p>
         </div>
-        <Dialog>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-stone-800 text-white hover:bg-stone-700">
               <Building2 className="mr-2 h-4 w-4" />
@@ -160,6 +188,11 @@ export function SocietyOverview() {
                 Define the parameters for your new decentralized society.
               </DialogDescription>
             </DialogHeader>
+            {error && (
+              <div className="text-sm font-medium text-red-500 dark:text-red-400">
+                {error}
+              </div>
+            )}
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">Society Name</Label>
@@ -186,13 +219,36 @@ export function SocietyOverview() {
                   placeholder="Describe your society's purpose and goals"
                 />
               </div>
+              <div className="grid gap-2">
+                <Label htmlFor="creatorName">Your Name</Label>
+                <Input
+                  id="creatorName"
+                  value={newSociety.creatorName}
+                  onChange={(e) =>
+                    setNewSociety({
+                      ...newSociety,
+                      creatorName: e.target.value,
+                    })
+                  }
+                  placeholder="Enter your name"
+                  required
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button
                 onClick={handleCreateSociety}
                 className="bg-stone-800 text-white hover:bg-stone-700"
+                disabled={isCreating}
               >
-                Create Society
+                {isCreating ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-stone-400 border-t-white"></div>
+                    Creating...
+                  </>
+                ) : (
+                  "Create Society"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
