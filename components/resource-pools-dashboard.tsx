@@ -113,7 +113,7 @@ export function ResourcePoolsDashboard({
                     </div>
                     <div className="mt-2 flex items-center justify-between text-sm">
                       <span>
-                        {pool.collected} / {pool.target} DAI
+                        {pool.collected} / {pool.target} ETH
                       </span>
                       <span className="text-stone-500">
                         {pool.contributors} contributors
@@ -157,7 +157,7 @@ export function ResourcePoolsDashboard({
               <p className="mt-6 text-xs text-stone-500">
                 Total Harberger taxes collected:{" "}
                 {taxAllocation.reduce((acc, item) => acc + item.percentage, 0)}{" "}
-                DAI (last 7 days)
+                ETH (last 7 days)
               </p>
             </CardContent>
           </Card>

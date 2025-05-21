@@ -11,6 +11,13 @@ import {
   Bike,
   Shirt,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  getResourceValue,
+  getDailyTaxRate,
+  type ContractValue,
+  type Currency,
+} from "@/lib/contract-utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +53,40 @@ const iconMap: Record<string, React.ElementType> = {
 export function ResourceCard({ resource, onClick }: ResourceCardProps) {
   // Use icon string to get the correct component, fallback to Building
   const Icon = iconMap[resource.icon] || Building;
+
+  const [resourceValue, setResourceValue] = useState<ContractValue | null>(
+    null
+  );
+  const [dailyTax, setDailyTax] = useState<ContractValue | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [preferredCurrency] = useState<Currency>("USDC"); // You can make this configurable
+
+  useEffect(() => {
+    async function loadContractValues() {
+      try {
+        const [value, tax] = await Promise.all([
+          getResourceValue(resource.id),
+          getDailyTaxRate(resource.id),
+        ]);
+
+        // Store the values with the preferred currency
+        setResourceValue({
+          ...value,
+          symbol: preferredCurrency,
+        });
+        setDailyTax({
+          ...tax,
+          symbol: preferredCurrency,
+        });
+      } catch (error) {
+        console.error("Error loading contract values:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadContractValues();
+  }, [resource.id]);
 
   // Calculate the depreciation progress if applicable
   const depreciationProgress =
@@ -174,16 +215,24 @@ export function ResourceCard({ resource, onClick }: ResourceCardProps) {
           <div className="flex items-center justify-between text-sm">
             <span className="text-stone-600">Current Value:</span>
             <span className="font-medium">
-              {resource.currentOwner
-                ? `${resource.currentValue} DAI`
-                : `${
-                    resource.currentDepreciatedValue || resource.currentValue
-                  } DAI`}
+              {loading ? (
+                <span className="animate-pulse">Loading...</span>
+              ) : (
+                `${resourceValue?.formatted || "0"} ${
+                  resourceValue?.symbol || "ETH"
+                }`
+              )}
             </span>
           </div>
           <div className="flex items-center justify-between text-sm">
             <span className="text-stone-600">Daily Tax:</span>
-            <span className="font-medium">{resource.dailyTax} DAI</span>
+            <span className="font-medium">
+              {loading ? (
+                <span className="animate-pulse">Loading...</span>
+              ) : (
+                `${dailyTax?.formatted || "0"} ${dailyTax?.symbol || "ETH"}`
+              )}
+            </span>
           </div>
           {resource.currentOwner && (
             <>

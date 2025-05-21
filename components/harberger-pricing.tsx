@@ -109,9 +109,9 @@ export function HarbergerPricing({ resourceId }: HarbergerPricingProps) {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="valuation" className="text-sm">
-              Your Valuation (DAI)
+              Your Valuation (ETH)
             </Label>
-            <span className="text-sm font-medium">{valuation} DAI</span>
+            <span className="text-sm font-medium">{valuation} ETH</span>
           </div>
           <div className="flex items-center space-x-2">
             <Slider
@@ -132,7 +132,7 @@ export function HarbergerPricing({ resourceId }: HarbergerPricingProps) {
             </Label>
             <Input
               id="daily-tax"
-              value={`${dailyTax.toFixed(2)} DAI`}
+              value={`${dailyTax.toFixed(2)} ETH`}
               readOnly
               className="mt-1"
             />

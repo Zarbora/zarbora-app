@@ -89,7 +89,7 @@ export function HarbergerSlot({ eventId }: HarbergerSlotProps) {
           className="text-xs"
           onClick={() => setIsDialogOpen(true)}
         >
-          {slotData.currentPrice} DAI
+          {slotData.currentPrice} ETH
         </Button>
       </div>
 
@@ -106,7 +106,7 @@ export function HarbergerSlot({ eventId }: HarbergerSlotProps) {
             <div>
               <Label>Current Price</Label>
               <div className="mt-1 text-lg font-medium">
-                {slotData.currentPrice} DAI
+                {slotData.currentPrice} ETH
               </div>
               <p className="text-xs text-stone-500">
                 Set by current owner: {slotData.currentOwner}
@@ -116,7 +116,7 @@ export function HarbergerSlot({ eventId }: HarbergerSlotProps) {
             <div>
               <Label>Hourly Tax Rate</Label>
               <div className="mt-1 text-lg font-medium">
-                {slotData.hourlyRate} DAI/hour
+                {slotData.hourlyRate} ETH/hour
               </div>
               <p className="text-xs text-stone-500">
                 Based on 10% annual tax rate

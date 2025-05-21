@@ -176,7 +176,7 @@ export function ResourceDetailsDialog({
                   Current Value
                 </h3>
                 <p className="text-sm text-stone-600">
-                  {resource.current_value} DAI
+                  {resource.current_value} ETH
                 </p>
               </div>
               <div className="space-y-1">
@@ -184,7 +184,7 @@ export function ResourceDetailsDialog({
                   Daily Tax
                 </h3>
                 <p className="text-sm text-stone-600">
-                  {resource.daily_tax} DAI
+                  {resource.daily_tax} ETH
                 </p>
               </div>
             </div>
@@ -199,13 +199,13 @@ export function ResourceDetailsDialog({
                     <div>
                       <p className="text-sm text-stone-600">Original Value</p>
                       <p className="text-sm font-medium">
-                        {resource.original_value} DAI
+                        {resource.original_value} ETH
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-stone-600">Daily Rate</p>
                       <p className="text-sm font-medium">
-                        {resource.depreciation_rate} DAI
+                        {resource.depreciation_rate} ETH
                       </p>
                     </div>
                   </div>
@@ -263,7 +263,7 @@ export function ResourceDetailsDialog({
 
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="value">New Value (DAI)</Label>
+                    <Label htmlFor="value">New Value (ETH)</Label>
                     <div className="flex items-center gap-2">
                       <Input
                         id="value"
@@ -286,7 +286,7 @@ export function ResourceDetailsDialog({
                       <div>
                         <p className="text-sm font-medium">New Daily Tax</p>
                         <p className="text-2xl font-bold">
-                          {(newValue * 0.1).toFixed(2)} DAI
+                          {(newValue * 0.1).toFixed(2)} ETH
                         </p>
                       </div>
                       <TooltipProvider>

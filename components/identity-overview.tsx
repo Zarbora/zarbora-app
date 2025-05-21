@@ -171,7 +171,7 @@ export function IdentityOverview({ societyId }: IdentityOverviewProps) {
                       Current Tax Payments
                     </span>
                     <span className="text-sm text-stone-500">
-                      {identity.harbergerStats.currentTaxPayments} DAI/day
+                      {identity.harbergerStats.currentTaxPayments} ETH/day
                     </span>
                   </div>
                   <Progress
