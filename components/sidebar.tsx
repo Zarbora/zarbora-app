@@ -48,6 +48,11 @@ export function Sidebar({ className }: { className?: string }) {
           href: `/society/${params.id}/speakers`,
           icon: Mic2,
         },
+        {
+          name: "Members",
+          href: `/society/${params.id}/members`,
+          icon: Users,
+        },
       ]
     : [];
 
