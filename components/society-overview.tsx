@@ -54,13 +54,32 @@ export function SocietyOverview() {
   async function loadData() {
     try {
       const societiesData = await api.societies.getAll();
-      setSocieties(societiesData);
+
+      // Fetch all related data for each society
+      const societiesWithCounts = await Promise.all(
+        societiesData.map(async (society) => {
+          const [members, resources, proposals] = await Promise.all([
+            api.members.getAll(society.id),
+            api.resources.getBySociety(society.id),
+            api.governance.getProposals(society.id),
+          ]);
+
+          return {
+            ...society,
+            total_members: members.length,
+            total_resources: resources.length,
+            total_proposals: proposals.length,
+          };
+        })
+      );
+
+      setSocieties(societiesWithCounts);
 
       if (address) {
         // Load membership status for each society
         const statuses: Record<string, string> = {};
         await Promise.all(
-          societiesData.map(async (society) => {
+          societiesWithCounts.map(async (society) => {
             // Check if already a member
             const members = await api.members.getAll(society.id);
             const isMember = members.some(
@@ -89,6 +108,9 @@ export function SocietyOverview() {
       }
     } catch (error) {
       console.error("Failed to load societies:", error);
+      setError(
+        error instanceof Error ? error.message : "Failed to load societies"
+      );
     } finally {
       setLoading(false);
     }
