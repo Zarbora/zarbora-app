@@ -37,7 +37,9 @@ interface AuthContextType {
   isConnected: boolean;
   isLoading: boolean;
   address: string | null;
+  displayName?: string;
   connect: () => Promise<void>;
+  disconnect: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -45,55 +47,43 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   address: null,
   connect: async () => {},
+  disconnect: () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [address, setAddress] = useState<string | null>(null);
+  const { address: wagmiAddress, isConnected: wagmiIsConnected } = useAccount();
+  const { disconnect: wagmiDisconnect } = useDisconnect();
+  const { open } = useWeb3Modal();
 
+  // Update local state when wagmi state changes
   useEffect(() => {
-    checkConnection();
-  }, []);
+    setIsLoading(false);
+  }, [wagmiIsConnected]);
 
-  async function checkConnection() {
+  const connect = async () => {
     try {
-      // Check if wallet is connected
-      if (typeof window.ethereum !== "undefined") {
-        const accounts = await window.ethereum.request({
-          method: "eth_accounts",
-        });
-        if (accounts.length > 0) {
-          setAddress(accounts[0]);
-          setIsConnected(true);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to check wallet connection:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function connect() {
-    try {
-      if (typeof window.ethereum !== "undefined") {
-        const accounts = await window.ethereum.request({
-          method: "eth_requestAccounts",
-        });
-        setAddress(accounts[0]);
-        setIsConnected(true);
-      } else {
-        throw new Error("Please install MetaMask or another Web3 wallet");
-      }
+      await open();
     } catch (error) {
       console.error("Failed to connect wallet:", error);
       throw error;
     }
-  }
+  };
+
+  const disconnect = () => {
+    wagmiDisconnect();
+  };
 
   return (
-    <AuthContext.Provider value={{ isConnected, isLoading, address, connect }}>
+    <AuthContext.Provider
+      value={{
+        isConnected: wagmiIsConnected,
+        isLoading,
+        address: wagmiAddress as string | null,
+        connect,
+        disconnect,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
