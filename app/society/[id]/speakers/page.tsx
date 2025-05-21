@@ -16,8 +16,8 @@ export default function SpeakersPage() {
   useEffect(() => {
     async function loadSpeakers() {
       try {
-        const data = await getSpeakers(societyId);
-        setSpeakers(data);
+        // const data = await getSpeakers(societyId);
+        // setSpeakers(data);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to load speakers"
@@ -39,7 +39,7 @@ export default function SpeakersPage() {
   }
 
   if (speakers.length === 0) {
-    return <div>No speakers found</div>;
+    return <div>Coming soon...</div>;
   }
 
   return (
@@ -47,7 +47,7 @@ export default function SpeakersPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Speakers</h1>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {speakers.map((speaker) => (
           <SpeakerProfileCard
             key={speaker.id}
@@ -59,7 +59,8 @@ export default function SpeakersPage() {
             endorsements={speaker.endorsements}
           />
         ))}
-      </div>
+      </div> */}
+      Coming soon
     </div>
   );
 }
