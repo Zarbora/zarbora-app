@@ -105,8 +105,6 @@ export function SocietyOverview() {
       const society = await api.societies.create({
         name: newSociety.name,
         description: newSociety.description || null,
-        governance_address: address,
-        treasury_address: null,
       });
 
       // Then add the creator as a member

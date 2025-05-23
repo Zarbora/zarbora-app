@@ -1,6 +1,14 @@
 import { supabase } from "./supabase";
 import type { Database } from "@/types/supabase";
 import { handleSupabaseError } from "./errors";
+import crypto from "crypto";
+import {
+  COMMUNITY_CONTRACT_ADDRESS,
+  COMMUNITY_CONTRACT_ABI,
+} from "./constants/contracts";
+import { config } from "./wagmi";
+import { readContract, writeContract } from '@wagmi/core';
+import { sepolia } from "wagmi/chains";
 
 type Tables = Database["public"]["Tables"];
 
@@ -218,6 +226,24 @@ export const api = {
         console.error("Error creating society:", error);
         handleSupabaseError(error);
       }
+
+      try {
+        const societyHash = crypto.createHash('sha256').update(data.id).digest('hex');
+
+        const result = await writeContract(config, {
+          address: COMMUNITY_CONTRACT_ADDRESS,
+          abi: COMMUNITY_CONTRACT_ABI,
+          functionName: 'addSociety',
+          args: [societyHash],
+          chainId: sepolia.id,
+        });
+        
+        console.log('Transaction submitted:', result);
+      } catch (contractError) {
+        console.error('Error writing to contract:', contractError);
+        throw new Error('Failed to register society on blockchain');
+      }
+
       return data;
     },
   },
@@ -262,6 +288,25 @@ export const api = {
         console.error("Error creating zone:", error);
         handleSupabaseError(error);
       }
+
+      try {
+        const societyHash = crypto.createHash('sha256').update(data.society_id).digest('hex');
+        const cityZoneHash = crypto.createHash('sha256').update(data.id).digest('hex');
+
+        const result = await writeContract(config, {
+          address: COMMUNITY_CONTRACT_ADDRESS,
+          abi: COMMUNITY_CONTRACT_ABI,
+          functionName: 'addCityZone',
+          args: [societyHash, cityZoneHash],
+          chainId: sepolia.id,
+        });
+        
+        console.log('Transaction submitted:', result);
+      } catch (contractError) {
+        console.error('Error writing to contract:', contractError);
+        throw new Error('Failed to register city zone on blockchain');
+      }
+
       return data;
     },
 
@@ -286,6 +331,7 @@ export const api = {
   },
 
   resources: {
+    // not used
     async getByZone(zoneId: string) {
       if (!zoneId) {
         throw new Error("zoneId is required");
@@ -351,10 +397,42 @@ export const api = {
         console.error("Error creating resource:", error);
         handleSupabaseError(error);
       }
+
+      const societyHash = crypto.createHash('sha256').update(resource.society_id).digest('hex');
+      const cityZoneHash = crypto.createHash('sha256').update(resource.zone_id).digest('hex');
+      const resourceHash = calculateSha256Hash(`${resource.society_id}-${resource.zone_id}-${resource.name}`);
+
+      try {
+        const result = await writeContract(config, {
+          address: COMMUNITY_CONTRACT_ADDRESS,
+          abi: COMMUNITY_CONTRACT_ABI,
+          functionName: 'addItem',
+          args: [
+            societyHash, 
+            cityZoneHash, 
+            resourceHash, 
+            resource.original_value,
+            0, // ?? minimal price
+            resource.depreciation_rate,
+            5 * 60, // depreciation interval is 5 minutes
+            resource.release_notice, // in seconds
+            resource.daily_tax,
+            resource.depreciating,
+          ],
+          chainId: sepolia.id,
+        });
+        
+        console.log('Transaction submitted:', result);
+      } catch (contractError) {
+        console.error('Error writing to contract:', contractError);
+        throw new Error('Failed to register member on blockchain');
+      }
+
       return data;
     },
 
     async update(id: string, updates: Tables["resources"]["Update"]) {
+      // should be supported only via voting
       if (!id) {
         throw new Error("id is required");
       }
@@ -373,27 +451,33 @@ export const api = {
       return data;
     },
 
-    async requestRelease(id: string) {
-      if (!id) {
-        throw new Error("id is required");
+    async requestRelease(societyId: string, cityZoneId: string, resourceName: string) {
+      if (!societyId || !cityZoneId || !resourceName) {
+        throw new Error("societyId, cityZoneId, and resourceName are required");
       }
 
-      const { data, error } = await supabase
-        .from("resources")
-        .update({
-          release_requested: true,
-          release_request_date: new Date().toISOString(),
-          status: "releasing",
-        })
-        .eq("id", id)
-        .select()
-        .single();
+      const societyHash = calculateSha256Hash(societyId);
+      const cityZoneHash = calculateSha256Hash(cityZoneId);
+      const resourceHash = calculateSha256Hash(`${societyId}-${cityZoneId}-${resourceName}`);
 
-      if (error) {
-        console.error("Error requesting resource release:", error);
-        handleSupabaseError(error);
+      try {
+        const result = await writeContract(config, {
+          address: COMMUNITY_CONTRACT_ADDRESS,
+          abi: COMMUNITY_CONTRACT_ABI,
+          functionName: 'releaseItem',
+          args: [societyHash, cityZoneHash, resourceHash],
+          chainId: sepolia.id,
+        });
+
+        console.log('Transaction submitted:', result);
+      } catch (contractError) {
+        console.error('Error writing to contract:', contractError);
+        throw new Error('Failed to request resource release');
       }
-      return data;
+
+      return {
+        "release_requested": true,
+      }
     },
   },
 
@@ -471,6 +555,7 @@ export const api = {
 
   identity: {
     async getBySociety(societyId: string) {
+      // what to do with that?
       if (!societyId) {
         throw new Error("societyId is required");
       }
@@ -600,47 +685,39 @@ export const api = {
   },
 
   harbergerPricing: {
-    async getByResource(resourceId: string) {
-      if (!resourceId) {
-        throw new Error("resourceId is required");
+    async getByResource(societyId: string, cityZoneId: string, resourceName: string) {
+      if (!societyId || !cityZoneId || !resourceName) {
+        throw new Error("societyId, cityZoneId, and resourceName are required");
       }
 
-      const { data, error } = await supabase
-        .from("harberger_pricing")
-        .select("*")
-        .eq("resource_id", resourceId)
-        .single();
+      const societyHash = calculateSha256Hash(societyId);
+      const cityZoneHash = calculateSha256Hash(cityZoneId);
+      const resourceHash = calculateSha256Hash(`${societyId}-${cityZoneId}-${resourceName}`);
 
-      if (error) {
-        console.error("Error fetching harberger pricing:", error);
-        handleSupabaseError(error);
+      try {
+        const item = await readContract(config, {
+          address: COMMUNITY_CONTRACT_ADDRESS,
+          abi: COMMUNITY_CONTRACT_ABI,
+          functionName: "getItem",
+          args: [societyHash, cityZoneHash, resourceHash],
+          chainId: sepolia.id,
+        }) as any;
+
+        return {
+          minPrice: item.minimalPrice,
+          maxPrice: item.initialPrice,
+          taxRate: item.taxRate,
+          noticePeriod: item.noticePeriod,
+        };
+      } catch (error) {
+        console.error("Error reading from contract:", error);
+        throw new Error("Failed to read from contract");
       }
-
-      return {
-        minPrice: data.min_price,
-        maxPrice: data.max_price,
-        taxRate: data.tax_rate,
-        retentionDays: data.retention_days,
-      };
-    },
-
-    async update(id: string, updates: Partial<HarbergerPricing>) {
-      const { data, error } = await supabase
-        .from("harberger_pricing")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Error updating harberger pricing:", error);
-        handleSupabaseError(error);
-      }
-      return data;
     },
   },
 
   governance: {
+    // not used
     async getProposals(societyId: string) {
       if (!societyId) {
         throw new Error("societyId is required");
@@ -659,6 +736,7 @@ export const api = {
       return data;
     },
 
+    // not used
     async getProposalById(proposalId: string) {
       if (!proposalId) {
         throw new Error("proposalId is required");
@@ -682,6 +760,7 @@ export const api = {
       return data;
     },
 
+    // not used
     async createProposal(proposal: Tables["proposals"]["Insert"]) {
       const { data, error } = await supabase
         .from("proposals")
@@ -696,6 +775,7 @@ export const api = {
       return data;
     },
 
+    // not used
     async vote(vote: Tables["votes"]["Insert"]) {
       const { data, error } = await supabase
         .from("votes")
@@ -710,6 +790,7 @@ export const api = {
       return data;
     },
 
+    // not used
     async getVotesByProposal(proposalId: string) {
       if (!proposalId) {
         throw new Error("proposalId is required");
@@ -728,6 +809,7 @@ export const api = {
       return data;
     },
 
+    // not used
     async getSettings(societyId: string) {
       if (!societyId) {
         throw new Error("societyId is required");
@@ -746,6 +828,7 @@ export const api = {
       return data;
     },
 
+    // not used
     async updateSettings(
       societyId: string,
       updates: Tables["governance_settings"]["Update"]
@@ -881,20 +964,37 @@ export const api = {
       return true;
     },
 
-    async create(member: Omit<Member, "id" | "created_at" | "updated_at">) {
-      const { data, error } = await supabase
-        .from("members")
-        .insert([
-          {
-            ...member,
-            address: member.address.toLowerCase(),
-          },
-        ])
-        .select()
-        .single();
+    async create(member: Omit<Member, "id" | "created_at" | "updated_at">) {      
+      try {
+        const societyHash = calculateSha256Hash(member.society_id);
+        
+        const result = await writeContract(config, {
+          address: COMMUNITY_CONTRACT_ADDRESS,
+          abi: COMMUNITY_CONTRACT_ABI,
+          functionName: 'registerCitizen',
+          args: [societyHash, member.address],
+          chainId: sepolia.id,
+        });
+        
+        console.log('Transaction submitted:', result);
+      } catch (contractError) {
+        console.error('Error writing to contract:', contractError);
+        throw new Error('Failed to register member on blockchain');
+      }
 
-      if (error) throw error;
-      return data as Member;
+      const { data, error } = await supabase
+      .from("members")
+      .insert([
+        {
+          ...member,
+          address: member.address.toLowerCase(),
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as Member;
     },
   },
 };
@@ -909,6 +1009,11 @@ export async function getSociety(id: string) {
 
   if (error) throw error;
   return data as Society;
+}
+
+// Utility function to calculate SHA-256 hash
+export function calculateSha256Hash(input: string): string {
+  return crypto.createHash('sha256').update(input).digest('hex');
 }
 
 export async function getSpeakers(societyId: string) {
@@ -994,6 +1099,7 @@ export async function getGovernanceStats(societyId: string) {
   };
 }
 
+// not used
 export async function createProposal(proposal: Omit<Proposal, "id">) {
   const { data, error } = await supabase
     .from("proposals")
@@ -1005,6 +1111,7 @@ export async function createProposal(proposal: Omit<Proposal, "id">) {
   return data;
 }
 
+// not used
 export async function updateProposal(id: string, updates: Partial<Proposal>) {
   const { data, error } = await supabase
     .from("proposals")
@@ -1017,6 +1124,7 @@ export async function updateProposal(id: string, updates: Partial<Proposal>) {
   return data;
 }
 
+// not used
 export async function createZone(zone: Omit<Zone, "id">) {
   const { data, error } = await supabase
     .from("zones")
@@ -1028,6 +1136,7 @@ export async function createZone(zone: Omit<Zone, "id">) {
   return data;
 }
 
+// not used
 export async function updateZone(id: string, updates: Partial<Zone>) {
   const { data, error } = await supabase
     .from("zones")
